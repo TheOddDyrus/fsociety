@@ -181,13 +181,11 @@ public class PlayerDao1 implements IPlayerDao {
 
 	@Override
 	public boolean in(int id, int money) throws SQLException, PlayerNotExistException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean out(int id, int money) throws SQLException, PlayerNotExistException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 

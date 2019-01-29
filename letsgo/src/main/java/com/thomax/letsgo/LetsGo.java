@@ -574,7 +574,6 @@ class ExceptionTest{
                 try {
                     fr.close();
                 } catch (Exception e) {
-                    // TODO: handle exception
                     e.printStackTrace();
                 }
             }
@@ -757,7 +756,6 @@ class Son extends Father {
 
 	@Override
 	public int sayHello() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 }
