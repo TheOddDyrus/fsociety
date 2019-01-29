@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="mybatis.mapper.IDeptMapper2">
+
+	<!-- 数据库表结构的一对一与一对多关系 -->
+
+
+	<select id="findAllDepts1" resultType="deptCustom">
+		SELECT d1.deptno, d1.dname as dnameX, d1.loc as locX, d2.info
+		  FROM dept d1, dept_custom d2
+		 WHERE d1.deptno = d2.deptno
+	</select>
+	
+	
+	 <resultMap type="dept" id="deptRM">
+		<id column="deptno" property="deptno"/>
+		<result column="dname" property="dnameX"/>
+		<result column="loc" property="locX"/>
+		<!-- 配置关联查询 -->
+		<association property="emp" javaType="emp">
+			<id column="empno" property="empno"/>
+			<result column="ename" property="ename"/>
+			<result column="job" property="job"/>
+			<result column="mgr" property="mgr"/>
+			<result column="hiredate" property="hiredate"/>
+		</association>
+	</resultMap>
+	<select id="findAllDepts2" resultMap="deptRM">
+		SELECT d1.deptno, d1.dname as dnameX, d1.loc as locX, e1.empno, e1.ename, e1.job, e1.mgr, e1.hiredate
+		  FROM dept d1, emp e1
+		 WHERE d1.deptno = e1.deptno
+	</select> 
+	
+	
+	<resultMap type="dept" id="deptRM2">
+		<id column="deptno" property="deptno"/>
+		<result column="dname" property="dnameX"/>
+		<result column="loc" property="locX"/>
+		<!-- 实现懒加载 -->
+		<association property="emp" javaType="emp" column="deptno" select="findEmpsByDeptno"/>
+	</resultMap>
+	<select id="findEmpsByDeptno" parameterType="int" resultType="emp">
+		SELECT * FROM emp WHERE deptno = #{deptno}
+	</select>
+	<select id="findAllDepts3" resultMap="deptRM2">
+		SELECT deptno, dname as dnameX, loc as locX FROM dept
+	</select>
+	
+	
+	<resultMap type="dept" id="deptRM3">
+		<id column="deptno" property="deptno"/>
+		<result column="dname" property="dnameX"/>
+		<result column="loc" property="locX"/>
+		<!-- 一对多关联映射 -->
+		<collection property="emps" javaType="list" ofType="emp" column="deptno">
+			<id column="empno" property="empno"/>
+			<result column="ename" property="ename"/> 
+			<result column="job" property="job"/>
+			<result column="mgr" property="mgr"/>
+			<result column="hiredate" property="hiredate"/>
+			<result column="sal" property="sal"/>
+			<result column="comm" property="comm"/>
+			<result column="deptno" property="deptno"/>
+		</collection>
+		<!-- 还有一种方法利用select进行懒加载
+		<collection property="emps" javaType="list" ofType="emp" column="deptno" select="findEmpsByDeptno"/> -->
+	</resultMap>
+	<select id="findAllDepts4" resultMap="deptRM3">
+		SELECT deptno, dname as dnameX, loc as locX FROM dept
+	</select>
+	
+	
+	
+	<!-- 动态SQL查询 -->
+	<sql id="deptFuzzy">
+		<where>
+			<if test="dname != null and dname != ''">
+				or dname like '%${dname}%'
+			</if>
+			<if test="loc != null and loc != ''">
+				or loc like '%${loc}%'
+			</if>
+			<if test="deptno != 0">
+				and deptno = #{deptno}
+			</if>
+		</where>
+	</sql>
+	<sql id="deptNoIn">
+		<!-- <where> -->
+			<foreach collection="deptnoList" item="customName111" open="deptno in(" close=")" separator=",">
+				#{customName111}
+			</foreach>
+		<!-- </where> -->
+	</sql>
+	<select id="findDeptsByFuzzy" resultType="dept" parameterType="deptVo">
+		SELECT * FROM dept
+		<include refid="deptFuzzy"/>
+		AND
+		<include refid="deptNoIn"/><!-- 因为拼接条件所以注释了deptNoIn中的where标签 -->
+	</select>
+</mapper>
+
+

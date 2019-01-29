@@ -1,0 +1,23 @@
+server:
+  port: 8762
+
+spring:
+  application:
+    name: thomax-provider
+  cloud:
+    #分布式文件配置（spring.application.name要和github上的文件名对应）
+    config:
+      label: master
+      profile: dev
+      #uri: http://localhost:8888/  #通过直连config服务获得文件配置
+      discovery:  #通过注册中心(config服务已注册到注册中心)获得文件配置
+        enabled: true
+        serviceId: config
+  #链路追踪，配置加在被调用方
+  zipkin:
+    base-url: http://localhost:9411
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/

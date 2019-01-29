@@ -1,0 +1,37 @@
+server:
+  port: 8770
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false #如果为true则可以不定义routes默认路由到服务的application.name，定义了routes需要设置为false只让路由一个
+          lowerCaseServiceId: true #转到服务名小写
+      routes:
+      - id: thomax-provider
+        uri: lb://thomax-provider
+        predicates:
+          - Path=/tp/**
+        filters:
+          - StripPrefix=1
+      - id: ribbon
+        uri: lb://ribbon #http://localhost:8764
+        predicates:
+          - Path=/ri/**
+        filters:
+          - StripPrefix=1
+      - id: feign
+        uri: lb://feign #http://localhost:8765
+        predicates:
+          - Path=/fe/**
+        filters:
+          - StripPrefix=1
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+

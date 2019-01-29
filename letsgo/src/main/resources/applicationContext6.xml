@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.2.xsd ">
+	
+	<!-- 扫描装载Dao与Service -->
+	<context:component-scan base-package="spring"/>
+	
+	<!-- 获得配置文件 -->
+	<context:property-placeholder location="classpath:db.properties"/>
+	<!-- 配置c3p0的DataSource -->
+	<bean name="dataSourceX" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="${db.driver}"/>
+		<property name="jdbcUrl" value="${db.url}"/>
+		<property name="user" value="${db.user}"/>
+		<property name="password" value="${db.pwd}"/>
+	</bean>
+	<!-- 配置DataSource到jdbc模板 -->
+	<bean name="jdbcTemplateX" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSourceX"/>
+	</bean>
+	
+	<!-- 配置DataSource到Dao内 -->
+	<bean name="empDao3" class="spring.dao.impl.EmpDao3">
+		<property name="dataSource" ref="dataSourceX"/>
+	</bean>
+</beans>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
+
+	<!-- 导入并使用其他配置文件中的模块 -->
+	<import resource="applicationContext6.xml"/>
+	
+	<!-- PROPAGATION_REQUIRED 支持当前事务，如果不存在，就新建一个（默认）
+	PROPAGATION_SUPPORTS 支持当前事务，如果不存在，就不使用事务
+	PROPAGATION_MANDATORY 支持当前事务，如果不存在，就抛出异常
+	PROPAGATION_REQUIRES_NEW 如果有事务存在，挂起当前事务，创建一个新的事务
+	PROPAGATION_NOT_SUPPORTED 以非事务方式运行，如果有事务存在，挂起当前事务
+	PROPAGATION_NEVER 以非事务方式运行，如果有事务存在，抛出异常
+	PROPAGATION_NESTED 如果当前事务存在，则嵌套事务执行 -->
+	
+	<!-- 扫描装载Dao与Service -->
+	<context:component-scan base-package="spring"/>
+	
+	<!-- 配置事务管理器(使用applicationContext6.xml中的dataSourceX) 
+		 DataSourceTransactionManager作用于JDBC 或MyBatis，作用于Hihbernate的叫：HibernateTransactionManager -->
+	<bean name="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSourceX"/>
+	</bean>
+	<!-- 配置通知（对事务管理器增强） -->
+	<tx:advice id="myAdviceX" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="save*" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="update*" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="delete*" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="find*" propagation="REQUIRED" read-only="true"/><!-- 对findAll与findEmpByNo起作用 -->
+			<tx:method name="transfer*" propagation="REQUIRED" read-only="false"/>
+		</tx:attributes>
+	</tx:advice>
+	<!-- AOP使用事务管理器 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* spring.service.impl.*Service*.*(..))" id="pointCutX"/>
+		<aop:advisor advice-ref="myAdviceX" pointcut-ref="pointCutX"/>
+	</aop:config>
+</beans>

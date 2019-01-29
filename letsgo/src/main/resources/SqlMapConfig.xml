@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "./mybatis-3-config.dtd">
+
+<configuration>
+	<!-- ******优化start****** -->
+    <!-- 1.引入资源文件db.properties,注解一定要放在configuration标签的第一行上 -->
+	<properties resource="db.properties"></properties>
+	
+	<!-- 2.1设置别名，在Emp的映射XML文件内可用在resultType与parameterType (不经常使用，因为较麻烦)
+	<typeAliases>
+		<typeAlias type="mybatis.domain.Emp" alias="emp"/>
+	</typeAliases> -->
+	
+	<!-- 2.2一次性对某个包下的所有类配置别名,别名一般就是指定包下的类名，不区分任何大小写，(经常用)
+		比如：mybatis.domain.Emp 可以写成：Emp或emp或emP -->
+    <typeAliases>
+		<package name="mybatis.domain"/>
+	</typeAliases>
+	<!-- ******优化end****** -->
+	
+	<environments default="development">
+		<environment id="development">
+			<transactionManager type="JDBC"/>
+			<dataSource type="POOLED">
+				<property name="driver" value="${db.driver}"/>
+				<property name="url" value="${db.url}"/>
+				<property name="username" value="${db.user}"/>
+				<property name="password" value="${db.pwd}"/>
+			</dataSource>
+		</environment>
+	</environments>
+	
+	<mappers>
+		<!-- 增加实体类的映射文件 -->
+		<mapper resource="mybatis/domain/EmpMapper.xml"/>
+		
+		<!-- 动态代理 -->
+		<mapper resource="mybatis/mapper/EmpMapper.xml"/>
+		<mapper resource="mybatis/mapper/DeptMapper.xml"/>
+				
+		<!-- 注解方式：映射包内所有增加了注解的接口 -->
+		<package name="mybatis.mapper.annotation"/>
+		
+		<!-- 注意：mapper与package如果造成文件重复映射可能导致问题发生 -->
+	</mappers>
+</configuration>
+
+  

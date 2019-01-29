@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+						http://www.springframework.org/schema/beans/spring-beans-4.2.xsd ">
+	
+	<!-- DI：set方法注入 -->
+	<bean name="emp04" class="spring.domain.Emp">
+		<property name="empno" value="1004"/>
+		<property name="ename" value="托马斯"/>
+		<property name="job" value="Java工程师"/>
+		<property name="mgr" value="1000"/>
+		<property name="hiredate" value="1992-07-05"/>
+		<property name="sal" value="20000"/>
+		<property name="comm" value="10000"/>
+		<property name="deptno" value="10"/>
+	</bean>
+	
+	<!-- DI：构造方法注入 -->
+	<bean name="emp05" class="spring.domain.Emp">
+		<constructor-arg name="empno" value="1005"/>
+		<constructor-arg name="ename" value="托马斯"/>
+		<constructor-arg name="job" value="Java工程师"/>
+		<constructor-arg name="mgr" value="1000"/>
+		<constructor-arg name="hiredate" value="1992-07-05"/>
+		<constructor-arg name="sal" value="20000"/>
+		<constructor-arg name="comm" value="10000"/>
+		<constructor-arg name="deptno" value="10"/>
+	</bean>
+	<bean name="emp06" class="spring.domain.Emp">
+		<constructor-arg index="0" value="1006"/>
+		<constructor-arg index="1" value="托马斯"/>
+		<constructor-arg index="2" value="Java工程师"/>
+		<constructor-arg index="3" value="1000"/>
+		<constructor-arg index="4" value="1992-07-05"/>
+		<constructor-arg index="5" value="20000"/>
+		<constructor-arg index="6" value="10000"/>
+		<constructor-arg index="7" value="10"/>
+	</bean>
+	
+	<!-- DI：p名称空间注入 -->
+	<bean name="emp07" class="spring.domain.Emp" 
+		p:empno="1007"
+		p:ename="托马斯"
+		p:job="Java工程师"
+		p:mgr="1000"
+		p:hiredate="1992-07-05"
+		p:sal="20000"
+		p:comm="10000"
+		p:deptno="10"/>
+		
+	<!-- DI：spel注入 -->
+	<bean name="emp08" class="spring.domain.Emp">
+		<property name="empno" value="#{emp04.empno + 4}"/>
+		<property name="ename" value="#{emp05.ename}"/>
+		<property name="job" value="#{emp06.job}"/>
+		<property name="mgr" value="#{emp07.mgr}"/>
+		<property name="hiredate" value="1992-07-05"/>
+	</bean>
+	
+	<!-- DI：数组的注入 -->
+	<bean name="cb01" class="spring.domain.CollectionBean">
+		<property name="strArr">
+			<array>
+				<value>克罗斯</value>
+				<value>莫德里奇</value>
+				<value>卡塞米罗</value>
+				<value>#{emp07.ename}</value>
+			</array>
+		</property>
+	</bean>
+	
+	<!-- DI：List集合的注入 -->
+	<bean name="cb02" class="spring.domain.CollectionBean">
+		<property name="list">
+			<list>
+				<ref bean="emp04"/>
+				<ref bean="emp05"/>
+				<ref bean="emp06"/>
+				<ref bean="emp07"/>
+				<ref bean="emp08"/>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- DI：Map集合的注入 -->
+	<bean name="cb03" class="spring.domain.CollectionBean">
+		<property name="map">
+			<map>
+				<entry key="#{emp04.empno}" value-ref="emp04"/>
+				<entry key="#{emp05.empno}" value-ref="emp05"/>
+				<entry key="#{emp06.empno}" value-ref="emp06"/>
+				<entry key="#{emp07.empno}" value-ref="emp07"/>
+				<entry key="#{emp08.empno}" value-ref="emp08"/>
+			</map>
+		</property>
+	</bean>
+	
+	<!-- DI：Properties集合的注入 -->
+	<bean name="cb04" class="spring.domain.CollectionBean">
+		<property name="properties">
+			<props>
+				<prop key="jdbcDriver">oracle.jdbc.driver.OracleDriver</prop>
+				<prop key="jdbcUrl">jdbc:oracle:thin:@localhost:1521/orcl</prop>
+				<prop key="username">scott</prop>
+				<prop key="password">tiger</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!-- 对象工厂方法创建对象 + spel注入 -->
+	<bean name="factory02" class="spring.factory.EmpFactory"/>
+	<bean name="emp09" factory-bean="factory02" factory-method="getEmp">
+		<!-- 工厂对象先于spel对象被创建，所以不能使用spel -->
+		<property name="ename" value="#{emp05.ename}"/>
+		<property name="hiredate" value="1992-07-05"/>
+	</bean>
+	<bean name="emp10" class="spring.domain.Emp">
+		<!-- 工厂对象先于spel对象被创建，所以不能使用spel -->
+		<property name="ename" value="#{emp05.ename}"/>
+		<property name="hiredate" value="1992-07-05"/>
+	</bean>
+</beans>
+
+
+
+
+
