@@ -9,7 +9,6 @@ import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
@@ -21,18 +20,17 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.Version;
 import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import java.io.File;
@@ -71,13 +69,13 @@ public class LuceneManager {
 			//定义文件内容域（分析、索引、存储）
 			Field fileContextField = new TextField("fileContextField", fileContext, Store.YES);
 			//定义文件大小域（分析、索引、存储）
-			Field fileSizeField = new LongField("fileSizeField", fileSize, Store.YES);
+			//Field fileSizeField = new LongField("fileSizeField", fileSize, Store.YES);
 			
 			Document document = new Document();
 			document.add(fileNameField);
 			document.add(filePathField);
 			document.add(fileContextField);
-			document.add(fileSizeField);
+			//document.add(fileSizeField);
 			writer.addDocument(document);
 		}
 		writer.close();
@@ -181,8 +179,10 @@ public class LuceneManager {
 	public void findDocsByNumericRangeQuery() throws IOException {
 		IndexSearcher searcher = LuceneTool.getIndexSearcher();
 		//参数1：代表查询的域名，参数2：代表查询的最小值，参数3：代表查询的最大值，参数4：代表有无包含最小值，参数5：有无包含最大值
+		/* 5.0版本以后取消掉了NumericRangeQuery
 		NumericRangeQuery<Long> query = NumericRangeQuery.newLongRange("fileSizeField", 50L, 100L, true, false);
 		LuceneTool.printRS(searcher, query);
+		*/
 		searcher.getIndexReader().close();
 	}
 	
@@ -191,10 +191,11 @@ public class LuceneManager {
 		IndexSearcher searcher = LuceneTool.getIndexSearcher();
 		TermQuery termQuery1 = new TermQuery(new Term("fileNameField", "lucene"));
 		TermQuery termQuery2 = new TermQuery(new Term("fileContextField", "lucene"));
-		BooleanQuery query = new BooleanQuery();
-		query.add(termQuery1, Occur.SHOULD); //Occur.SHOULD：应该满足，但是不满足也可以，相当于or
-		query.add(termQuery2, Occur.MUST); //Occur.MUST：必须满足此条件，相当于and； Occur.MUST_NOT 查询条件不能满足，相当于not 非
-		LuceneTool.printRS(searcher, query);
+
+		BooleanClause bc1 = new BooleanClause(termQuery1, Occur.SHOULD); //Occur.SHOULD：应该满足，但是不满足也可以，相当于or
+		BooleanClause bc2 = new BooleanClause(termQuery2, Occur.MUST); //Occur.MUST：必须满足此条件，相当于and； Occur.MUST_NOT 查询条件不能满足，相当于not 非
+		BooleanQuery boolQuery = new BooleanQuery.Builder().add(bc1).add(bc2).build();
+		LuceneTool.printRS(searcher, boolQuery);
 		searcher.getIndexReader().close();
 	}
 	
@@ -256,7 +257,7 @@ public class LuceneManager {
 			//根据搜索器对象及查询对象得到前10条记录(其中TopDocs中存放的是文档的id),这里的10代表只显示的记录条数
 			TopDocs docs = searcher.search(query , 10);
 			//测试查询的条数（总共有n条）
-			int totalHits = docs.totalHits;
+			long totalHits = docs.totalHits;
 			System.out.println("满足条件的有：" + totalHits + "条!\n");
 			//6.遍历前10条记录
 			for(ScoreDoc sd : docs.scoreDocs) {
