@@ -1,0 +1,96 @@
+&nbsp;    <!-- -->
+&lt;      <!--<-->
+&amp;     <!-->-->
+&quot;    <!--"-->
+<!--&apos;    '--> (IE不支持)
+&cent;    <!--￠-->
+&pound;   <!--£-->
+&yen;     <!--¥-->
+&euro;    <!--€-->
+&sect;    <!--§-->
+&copy;    <!--©-->
+&reg;     <!--®-->
+&trade;   <!--™-->
+&times;   <!--×-->
+&divide;  <!--÷-->
+
+<!--<!DOCTYPE html>HTML文档-->
+<!--<html>所有元素内容都应作为HTML处理</html>-->
+<!--<head>元数据部分用来向浏览器提供文档的相关信息</head>-->
+<!--<body>HTML的主体告诉浏览器该向用户显示文档的哪些内容</body>-->
+<div>用来把网页分块 并且里面可以装任意的html元素</div>
+<span>可以表示一个小区块，比如一些文字，span和div的不同就是 span能够在一行内显示 而 div独占一行</span>
+<h1>h1到h6这6个标签表示6级标题</h1><h6>，表现出来的效果就是从h1开始文字大小逐渐变小</h6>
+<p>段落标签，通常用来装一整段文字,在一篇文章中常用</p>
+<ul><!--无序列表标签-->
+    <li>列表项目,这个标签非常实用</li>
+    <li>例如：各种菜单、各种新闻排行 都可以用无序列表来实现</li>
+</ul><!--无序列表标签-->
+<table border="1" ><!--一张表格-->
+	<tr><!--一行表格-->
+	    <th>表头1</th>
+	    <th>表头2</th>
+	    <th>表头3</th>
+	</tr><!--一行表格-->
+	<tr>
+	    <td>单元格1</td>
+	    <td>单元格2</td>
+	    <td colspan="设置当前单元格的在水平方向合并单元格的个数"></td>
+	</tr>
+	<tr>
+	    <td>单元格1</td>
+	    <td>单元格2</td>
+	    <td rowspan="设置当前单元格的在垂直方向合并单元格的个数，顺便插入一张图片"><img src="tablehead.jpg"/></td>
+	</tr>
+</table><!--一张表格-->
+<i>斜体</i>
+<em>斜体,表示强调的文本</em>
+<b>加粗,在没有其他合适标签更合适时才把此标签作为最后的选项</b>
+<strong>加粗,表示重要文本</strong>
+<mark>带有记号的文本</mark>
+<hr><!--一根水平分割线-->
+<br><!--换行-->
+<img src='./google.png' alt='当图片没有被正确加载的时候显示的文字'><!--./表示与此.html同级目录-->
+<img src='./img/google.png' title='当鼠标移动到图片的时候显示的文字'><!--表示下一级/img目录-->
+<img src='../img/google.png'><!--表示上一级/img目录-->
+<a href='http://www.baidu.com' target="_blank">a表示超链接</a><!--target属性如果=_blank每次点击会新开一个浏览器标签页来显示链接的内容-->
+<textarea rows="高度(行)" cols="宽度(字符数)">多行文本框</textarea>
+<button type="button">按钮</button>
+<select name="下拉列表框名称" size="选项的可见数目" ><!--multiple：允许多选-->
+	<option value="cr7">C.罗纳尔多</option>
+	<option>莫德里奇</option>
+	<option value="kr8">克罗斯</option>
+	<!--如果value属性没有写，提交的时候的值是option元素里面的内容-->
+</select>
+<label for="SSN">Social Security Number:</label><!--显式的绑定：通过id属性绑定-->
+<input type="text" name="SocSecNum" id="SSN" /><!--label为input元素定义标注：用户选择label标签时，浏览器就会自动将焦点转到和label标签相关的表单控件上-->
+<label>Date of Birth: <input type="text" name="DofB" /></label><!--隐式的绑定-->
+
+<!--
+<form action="设置表单提交的地址"  method="用于设置表单提交的方法：GET/POST"  target="规定在何处打开action的地址：_blank _self _parent _top 某个文件名"
+      name="表单的名称"  accept-charset="规定服务器可处理的表单数据字符集"  enctype="规定在发送表单数据之前如何对其进行编码" 
+      autocomplete="规定是否启用表单的自动完成功能(H5)：on/off"  novalidate="使用该属性时提交表单时不进行验证(H5)：novalidate">
+      (enctype属性可能的值：application/x-www-form-urlencoded  multipart/form-data  text/plain)
+            输入文本内容：<input type="text" name="user"/>
+            输入文本内容(不可见)：<input type="password" name="pwd"/>
+            多选框1：<input type="checkbox" name="cb1" checked="checked"/>(可以存在多个checked)
+            多选框2：<input type="checkbox" name="cb2"/>
+            单选框1：<input type="radio" name="r1" checked="checked"/>(只能存在一个checked)
+            单选框2：<input type="radio" name="r2"/>
+            提交按钮：<input type="submit" value="确定"/>(执行提交动作将form数据发送到后台处理)
+            普通按钮：<input type="button" name="b" value="确定"/>(不触发提交form动作)
+            文件选择控件：<input type="file" name="f"/>
+            隐藏域：<input type="hidden" name="h"/>(隐藏表单元素，某个数据在前端不需要显示且在后台需要的时候使用)
+            (name属性，规定input元素的名称，后台会根据这个属性的值来接收数据；元素没有name属性时，表单提交的时候，数据不会被发送出去)
+            (value属性，表单项的值)
+            (readonly属性，指定控件处于只读状态，针对输入框有效，对按钮无意义) 
+            (disabled属性，控件不可用，灰色，并且表单提交时不会传送此数据)
+</form>
+-->
+
+
+
+
+
+
+
