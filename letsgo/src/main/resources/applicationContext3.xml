@@ -6,7 +6,7 @@
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
 	<!-- 对包进行扫描，自动获取注解 -->
-	<context:component-scan base-package="spring"/>
+	<context:component-scan base-package="com.thomax.letsgo.spring"/>
 </beans>
 
 

@@ -18,10 +18,10 @@
 	<util:properties id="config" location="classpath:db.properties" />
 	
 	<!-- 通过获得配置文件内容来配置连接池 -->
-	<bean name="dataSourceCustom" class="com.mchange.v2.c3p0.ComboPooledDataSource">
-		<property name="driverClass" value="${db.driver}"/>
-		<property name="jdbcUrl" value="${db.url}"/>
-		<property name="user" value="${db.user}"/>
+	<bean name="dataSourceCustom" class="com.alibaba.druid.pool.DruidDataSource">
+		<property name="driver" value="${db.driver}"/>
+		<property name="url" value="${db.url}"/>
+		<property name="username" value="${db.user}"/>
 		<property name="password" value="${db.pwd}"/>
 	</bean>
 </beans>

@@ -8,7 +8,7 @@
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
 	<!-- 配置对包进行自动扫描 --> 
-	<context:component-scan base-package="spring"/>
+	<context:component-scan base-package="com.thomax.letsgo.spring"/>
 	<!-- 配置切面自动生成代理对象 -->
 	<!-- 这里作用于MyAdvice2内的注解 -->
 	<aop:aspectj-autoproxy/>

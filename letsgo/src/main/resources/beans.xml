@@ -6,7 +6,7 @@
 						http://www.springframework.org/schema/beans/spring-beans-4.2.xsd ">
 	
 	<!-- DI：set方法注入 -->
-	<bean name="emp04" class="spring.domain.Emp">
+	<bean name="emp04" class="com.thomax.letsgo.spring.domain.Emp">
 		<property name="empno" value="1004"/>
 		<property name="ename" value="托马斯"/>
 		<property name="job" value="Java工程师"/>
@@ -18,7 +18,7 @@
 	</bean>
 	
 	<!-- DI：构造方法注入 -->
-	<bean name="emp05" class="spring.domain.Emp">
+	<bean name="emp05" class="com.thomax.letsgo.spring.domain.Emp">
 		<constructor-arg name="empno" value="1005"/>
 		<constructor-arg name="ename" value="托马斯"/>
 		<constructor-arg name="job" value="Java工程师"/>
@@ -28,7 +28,7 @@
 		<constructor-arg name="comm" value="10000"/>
 		<constructor-arg name="deptno" value="10"/>
 	</bean>
-	<bean name="emp06" class="spring.domain.Emp">
+	<bean name="emp06" class="com.thomax.letsgo.spring.domain.Emp">
 		<constructor-arg index="0" value="1006"/>
 		<constructor-arg index="1" value="托马斯"/>
 		<constructor-arg index="2" value="Java工程师"/>
@@ -40,7 +40,7 @@
 	</bean>
 	
 	<!-- DI：p名称空间注入 -->
-	<bean name="emp07" class="spring.domain.Emp" 
+	<bean name="emp07" class="com.thomax.letsgo.spring.domain.Emp"
 		p:empno="1007"
 		p:ename="托马斯"
 		p:job="Java工程师"
@@ -51,7 +51,7 @@
 		p:deptno="10"/>
 		
 	<!-- DI：spel注入 -->
-	<bean name="emp08" class="spring.domain.Emp">
+	<bean name="emp08" class="com.thomax.letsgo.spring.domain.Emp">
 		<property name="empno" value="#{emp04.empno + 4}"/>
 		<property name="ename" value="#{emp05.ename}"/>
 		<property name="job" value="#{emp06.job}"/>
@@ -60,7 +60,7 @@
 	</bean>
 	
 	<!-- DI：数组的注入 -->
-	<bean name="cb01" class="spring.domain.CollectionBean">
+	<bean name="cb01" class="com.thomax.letsgo.spring.domain.CollectionBean">
 		<property name="strArr">
 			<array>
 				<value>克罗斯</value>
@@ -72,7 +72,7 @@
 	</bean>
 	
 	<!-- DI：List集合的注入 -->
-	<bean name="cb02" class="spring.domain.CollectionBean">
+	<bean name="cb02" class="com.thomax.letsgo.spring.domain.CollectionBean">
 		<property name="list">
 			<list>
 				<ref bean="emp04"/>
@@ -85,7 +85,7 @@
 	</bean>
 	
 	<!-- DI：Map集合的注入 -->
-	<bean name="cb03" class="spring.domain.CollectionBean">
+	<bean name="cb03" class="com.thomax.letsgo.spring.domain.CollectionBean">
 		<property name="map">
 			<map>
 				<entry key="#{emp04.empno}" value-ref="emp04"/>
@@ -98,7 +98,7 @@
 	</bean>
 	
 	<!-- DI：Properties集合的注入 -->
-	<bean name="cb04" class="spring.domain.CollectionBean">
+	<bean name="cb04" class="com.thomax.letsgo.spring.domain.CollectionBean">
 		<property name="properties">
 			<props>
 				<prop key="jdbcDriver">oracle.jdbc.driver.OracleDriver</prop>
@@ -110,13 +110,13 @@
 	</bean>
 	
 	<!-- 对象工厂方法创建对象 + spel注入 -->
-	<bean name="factory02" class="spring.factory.EmpFactory"/>
+	<bean name="factory02" class="com.thomax.letsgo.spring.factory.EmpFactory"/>
 	<bean name="emp09" factory-bean="factory02" factory-method="getEmp">
 		<!-- 工厂对象先于spel对象被创建，所以不能使用spel -->
 		<property name="ename" value="#{emp05.ename}"/>
 		<property name="hiredate" value="1992-07-05"/>
 	</bean>
-	<bean name="emp10" class="spring.domain.Emp">
+	<bean name="emp10" class="com.thomax.letsgo.spring.domain.Emp">
 		<!-- 工厂对象先于spel对象被创建，所以不能使用spel -->
 		<property name="ename" value="#{emp05.ename}"/>
 		<property name="hiredate" value="1992-07-05"/>
