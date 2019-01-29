@@ -37,6 +37,7 @@ import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 
 public class LuceneManager {
 	
@@ -282,7 +283,7 @@ public class LuceneManager {
 		
 		private static IndexSearcher getIndexSearcher() throws IOException {
 			//获取索引库所在的目录对象
-			Directory directory = FSDirectory.open(new File(myIndex));
+			Directory directory = FSDirectory.open(Paths.get(myIndex));
 			//根据目录对象得到相应的输入流
 			IndexReader reader = DirectoryReader.open(directory );
 			//根据输入流对象构建索引搜索器对象
@@ -291,11 +292,11 @@ public class LuceneManager {
 		
 		private static IndexWriter getIndexWriter() throws IOException {
 			//定义索引库的存放目录
-			Directory directory = FSDirectory.open(new File(myIndex));
+			Directory directory = FSDirectory.open(Paths.get(myIndex));
 			//构建分词器(分析器) ,StandardAnalyzer 是标准分词器，官方建议使用的
 			Analyzer analyzer = new StandardAnalyzer();
 			//创建索引输出流的配置
-			IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, analyzer);
+			IndexWriterConfig config = new IndexWriterConfig(analyzer);
 			//构造IndexWriter 输出流对象
 			IndexWriter writer = new IndexWriter(directory, config);
 			

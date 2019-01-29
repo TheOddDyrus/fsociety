@@ -1,6 +1,6 @@
 package com.thomax.letsgo.spring.utils;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.alibaba.druid.pool.DruidDataSource;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -11,7 +11,7 @@ import java.sql.Statement;
 
 public class JdbcUtils {
 	
-	private static DataSource dataSource = new ComboPooledDataSource();
+	private static DataSource dataSource = new DruidDataSource();
 	private static ThreadLocal<Connection> tl = new ThreadLocal<>();
 	
 	public static DataSource getDataSource() {
