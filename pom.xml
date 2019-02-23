@@ -12,7 +12,7 @@
 
     <groupId>com.thomax</groupId>
     <artifactId>fsociety</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>7777</version>
     <packaging>pom</packaging>
 
     <modules>
