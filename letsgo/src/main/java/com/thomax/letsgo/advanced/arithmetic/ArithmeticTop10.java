@@ -1,4 +1,4 @@
-package com.thomax.letsgo.handling;
+package com.thomax.letsgo.advanced.arithmetic;
 
 /**
  * 10大计算机经典算法
