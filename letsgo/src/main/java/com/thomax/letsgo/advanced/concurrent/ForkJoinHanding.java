@@ -10,6 +10,9 @@ import java.util.concurrent.RecursiveTask;
  * Fork/Join框架是Java7内ExecutorService接口的一种具体实现，目的是为了帮助你更好地利用多处理器带来的好处。
  * 它是为那些能够被递归地拆解成子任务的工作类型量身设计的。
  * 其目的在于能够使用所有可用的运算能力来提升你的应用的性能。
+ *
+ * Fork/Join使用工作窃取(work-stealing)算法：
+ * 为了减少窃取任务线程和被窃取任务线程之间的竞争，通常会使用双端队列，被窃取任务线程永远从双端队列的头部拿任务执行，而窃取任务的线程永远从双端队列的尾部拿任务执行
  */
 public class ForkJoinHanding {
 
