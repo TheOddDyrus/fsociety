@@ -37,7 +37,7 @@ design 设计
      |----- InterfaceSegregation.java  接口隔离原则
      |----- LiskovSubstitution.java  里氏代换原则
      |----- OpenClosed.java  开闭原则
-  |-----Readme.txt this
+  |-----README this
   
   
                                      Summarize by _thomas

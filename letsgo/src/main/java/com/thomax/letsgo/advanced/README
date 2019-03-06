@@ -2,10 +2,20 @@
 advanced 高级进阶
   |-----arithmetic 算法
      |----- ArithmeticTop10.java  十大经典算法
+  |-----cache 缓存
+     |----- CacheAnalysis  各大缓存优劣性分析
   |-----concurrent 并发
-     |----- ForkJoinHanding.java  并行编程
-     |----- FutureHandling.java  异步结果
-  |-----Readme.txt this
+     |----- ForkJoinHanding.java  并行操作
+     |----- FutureHandling.java  异步操作
+     |----- LockHanding.java.java  锁的操作
+  |-----jvm 内存调优
+     |----- MemoryRecovery  内存回收算法
+  |-----mq 中间件
+     |----- CacheAnalysis  各大中间件优劣势分析
+  |-----thread 多线程
+     |----- ThreadLocalHandling.java  线程封闭操作
+     |----- ThreadPoolOptimize  线程池调优
+  |-----README this
   
   
                                      Summarize by _thomas
