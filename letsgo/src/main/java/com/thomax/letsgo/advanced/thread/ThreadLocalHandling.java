@@ -14,7 +14,7 @@ import java.sql.SQLException;
 public class ThreadLocalHandling {
 
     //ThreadLocal.get()的时候会调用initialValue()得到value和以自身为key保存到当前线程的threadLocals中（JDK1.8的写法）
-    private static ThreadLocal<Connection> connectionHolder2 = ThreadLocal.withInitial(DBUtils::getConnection);
+    private static ThreadLocal<Connection> connectionHolder2 = ThreadLocal.withInitial(DBUtils::getConnection2);
 
     private static ThreadLocal<Connection> connectionHolder = new ThreadLocal<Connection>() {
         @Override
@@ -26,13 +26,24 @@ public class ThreadLocalHandling {
     public static Connection getConnection() {
         return connectionHolder.get();
     }
+    public static Connection getConnection2() {
+        return connectionHolder2.get();
+    }
 }
 
 class UseThreadLocal {
 
     public void exec() throws SQLException {
-        ThreadLocalHandling.getConnection().setAutoCommit(false);
-        ThreadLocalHandling.getConnection().commit();
-        ThreadLocalHandling.getConnection().close();
+        Connection connection = ThreadLocalHandling.getConnection();
+        Connection connection2 = ThreadLocalHandling.getConnection2();
+        connection.setAutoCommit(false);
+        connection2.setAutoCommit(false);
+        /*
+        中间的增删改查操作
+         */
+        connection.commit();
+        connection2.commit();
+        connection.close();
+        connection2.close();
     }
 }

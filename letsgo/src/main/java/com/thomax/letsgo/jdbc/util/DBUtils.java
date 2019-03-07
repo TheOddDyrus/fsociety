@@ -63,6 +63,15 @@ public class DBUtils {
 		}
 		return null;
 	}
+
+	public static Connection getConnection2() {
+		try {
+			return DriverManager.getConnection(DB_URL + "另一个数据库url", USER, PWD);
+		} catch (SQLException e) {
+			System.out.println("DriverManager获得Connection失败：" + e.getMessage());
+		}
+		return null;
+	}
 	
 	/**
 	 * 关闭Statement，Connection，ResultSet
