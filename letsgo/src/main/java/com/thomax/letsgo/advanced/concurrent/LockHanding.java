@@ -1,5 +1,6 @@
 package com.thomax.letsgo.advanced.concurrent;
 
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import org.junit.runner.notification.RunListener.ThreadSafe;
 
 import java.util.*;
@@ -10,8 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class LockHanding {
-}
+public class LockHanding { }
 
 /**
  * 对象锁和类锁
@@ -50,7 +50,7 @@ class ReentrantClass extends OriginalClass {
  * ConcurrentHashMap、CopyOnWriteArraySet、CopyOnWriteArrayList是三大类集合中性能较高的线程安全集合
  * Collections集合工具类中通过包装器工厂方法synchronizedXX()来new出自己的一个实现了以待同步对象为互斥锁（mutex）的静态内部类，这也是一种通过封闭机制来让非线程安全类变为线程安全的方式
  */
-class synchronizedUtil<K, V> {
+class SynchronizedUtil<K, V> {
     public Map<K, V> getThreadSafeMap(Map<K, V> map, boolean performance) {
         if (performance) {
             return new ConcurrentHashMap<>(map);
@@ -77,8 +77,8 @@ class synchronizedUtil<K, V> {
  * 线程安全性的委托：CAS.num是非线程安全的，它可以将线程安全的操作委托给AtomicLong
  */
 class CAS {
-    public static AtomicLong atomicLong;
-    public static long num = 0;
+     static AtomicLong atomicLong;
+     static long num = 0;
 }
 class SafeDelegate {
     private ExecutorService threadPool = Executors.newFixedThreadPool(100);
@@ -99,5 +99,24 @@ class SafeDelegate {
 
             threadPool.submit(runnable);
         }
+    }
+}
+
+/**
+ * 使用final来实现一个不可变对象，属性声明或形参声明都可以
+ */
+@Immutable
+class Point {
+    private final int x;
+    private int y;
+    public Point(int x, final int y) {
+        this.x = x;
+        this.y = y;
+    }
+    public int getX() {
+        return x;
+    }
+    public int getY() {
+        return y;
     }
 }

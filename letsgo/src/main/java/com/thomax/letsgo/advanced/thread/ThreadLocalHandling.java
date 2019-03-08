@@ -26,7 +26,7 @@ public class ThreadLocalHandling {
     public static Connection getConnection() {
         return connectionHolder.get();
     }
-    public static Connection getConnection2() {
+    static Connection getConnection2() {
         return connectionHolder2.get();
     }
 }
