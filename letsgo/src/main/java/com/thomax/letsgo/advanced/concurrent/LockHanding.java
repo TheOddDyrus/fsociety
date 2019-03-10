@@ -5,6 +5,8 @@ import org.junit.runner.notification.RunListener.ThreadSafe;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
@@ -53,21 +55,35 @@ class ReentrantClass extends OriginalClass {
 class SynchronizedUtil<K, V> {
     public Map<K, V> getThreadSafeMap(Map<K, V> map, boolean performance) {
         if (performance) {
-            return new ConcurrentHashMap<>(map);
+            return new ConcurrentHashMap<>(map);//分段锁
+        }
+        return Collections.synchronizedMap(map);
+    }
+
+    public Map<K, V> getThreadSafeSortedMap(Map<K, V> map, boolean performance) {
+        if (performance) {
+            return new ConcurrentSkipListMap<>(map); //JDK 1.6引入的高性能线程安全排序集合
         }
         return Collections.synchronizedMap(map);
     }
 
     public Set<V> getThreadSafeSet(Set<V> set, boolean performance) {
         if (performance) {
-            return new CopyOnWriteArraySet<>(set);
+            return new CopyOnWriteArraySet<>(set); //底层基于CopyOnWriteArrayList实现
+        }
+        return Collections.synchronizedSet(set);
+    }
+
+    public Set<V> getThreadSafeSortedSet(Set<V> set, boolean performance) {
+        if (performance) {
+            return new ConcurrentSkipListSet<>(set); //JDK 1.6引入的高性能线程安全排序集合
         }
         return Collections.synchronizedSet(set);
     }
 
     public List<V> getThreadSafeList(List<V> list, boolean performance) {
         if (performance) {
-            return new CopyOnWriteArrayList<>(list);
+            return new CopyOnWriteArrayList<>(list); //并发访问时查询还是基于底层无锁的数组，当增删改时内置可重入锁实现线程安全，适用于迭代操作远远多于修改操作时
         }
         return Collections.synchronizedList(list);
     }
@@ -120,3 +136,8 @@ class Point {
         return y;
     }
 }
+
+/**
+ * 常见原子操作：
+ *  若没有则添加、若相等则移除||若相等则替换
+ */
