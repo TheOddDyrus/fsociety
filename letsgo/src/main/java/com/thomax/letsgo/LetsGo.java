@@ -1820,7 +1820,10 @@ class MyCallable implements Callable<Integer> {
     }
 }
 
-/**class29-jdk1.8-Lambda表达式*/
+/**class29-jdk1.8-Lambda表达式：
+ *    ()     ->   {}
+ * 形参列表  ->   语句块，只有一行可以不用{}
+ */
 //Lambda表达式主要用来定义行内执行的方法类型接口，例如，一个简单方法接口
 class LambdaClass {
 	
@@ -1863,11 +1866,11 @@ class LambdaClass {
     
 	interface MathOperation {
 		int operation(int a, int b);
-		
-		/*接口内写函数不会影响Lambda表达式
+
+		//接口内写默认方法不会影响Lambda表达式
 		default int addition(int a, int b){
 	        return (a+b)*2;
-		}*/
+		}
 	}
     
 	interface GreetingService {

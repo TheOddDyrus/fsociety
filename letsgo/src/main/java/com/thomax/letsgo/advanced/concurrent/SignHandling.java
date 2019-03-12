@@ -3,7 +3,9 @@ package com.thomax.letsgo.advanced.concurrent;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
 
 public class SignHandling { }
@@ -18,20 +20,18 @@ class CountDownLatchHandling {
         final CountDownLatch endGate = new CountDownLatch(nThreads);
 
         for (int i = 0; i < nThreads; i++) {
-            Thread t = new Thread() {
-                public void run() {
+            Thread t = new Thread(() -> {
+                try {
+                    startGate.await(); //每个线程持有这个闭锁
                     try {
-                        startGate.await(); //每个线程持有这个闭锁
-                        try {
-                            task.run();
-                        } finally {
-                            endGate.countDown(); //每个线程结束时让闭锁的计数减1
-                        }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt(); //清除线程内置的中断状态，让线程继续执行
+                        task.run();
+                    } finally {
+                        endGate.countDown(); //每个线程结束时让闭锁的计数减1
                     }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); //清除线程内置的中断状态，让线程继续执行
                 }
-            };
+            });
             t.start();
         }
 
@@ -80,10 +80,62 @@ class SemaphoreHandling<T> {
 }
 
 /**
- * 栅栏
+ * 栅栏可以使一定数量的参与方反复地在栅栏位置汇集
  */
-class CyclicBarrierHandling {
+class CellularAutomata {
+    private final Board mainBoard;
+    private final CyclicBarrier barrier;
+    private final Worker[] workers;
 
+    public CellularAutomata(Board board) {
+        this.mainBoard = board;
+        int count = Runtime.getRuntime().availableProcessors(); //返回Java虚拟机的可用的处理器数量
+        this.barrier = new CyclicBarrier(count, mainBoard::commitNewValues); //形参：(栅栏的信号量, 传入线程执行的内容)
+        this.workers = new Worker[count];
+        for (int i = 0; i < count; i++)
+            workers[i] = new Worker(mainBoard.getSubBoard(count, i));
+    }
+
+    private class Worker implements Runnable {
+        private final Board board;
+
+        public Worker(Board board) { this.board = board; }
+        public void run() {
+            while (!board.hasConverged()) {
+                for (int x = 0; x < board.getMaxX(); x++)
+                    for (int y = 0; y < board.getMaxY(); y++)
+                        board.setNewValue(x, y, computeValue(x, y));
+                try {
+                    barrier.await();  //栅栏信号量++，并阻塞当前线程（当栅栏的信号量等于count时停止阻塞，并且停止阻塞以后信号量清0）
+                } catch (InterruptedException | BrokenBarrierException ex) {
+                    return;
+                }
+            }
+        }
+
+        private int computeValue(int x, int y) {
+            // Compute the new value that goes in (x,y)
+            return 0;
+        }
+    }
+
+    public void start() {
+        for (Worker worker : workers) {
+            new Thread(worker).start();
+        }
+        mainBoard.waitForConvergence();
+    }
+
+    interface Board {
+        int getMaxX();
+        int getMaxY();
+        int getValue(int x, int y);
+        int setNewValue(int x, int y, int value);
+        void commitNewValues();
+        boolean hasConverged();
+        void waitForConvergence();
+        Board getSubBoard(int numPartitions, int index);
+    }
 }
 
 
