@@ -40,9 +40,10 @@ public class FutureHandling {
 }
 
 /**
- * 利用异步构建高效可伸缩性缓存
+ * 利用异步构建高效可伸缩性缓存（适合计算量较大的执行任务）
+ * FutureTask实现了Future接口，所以异步结果可以通过FutureTask获得
  */
-class Memoizer <I, O> implements Computable<I, O> {
+class Memoizer<I, O> implements Computable<I, O> {
     private final ConcurrentMap<I, Future<O>> cache = new ConcurrentHashMap<>();
     private final Computable<I, O> c;
 
@@ -50,24 +51,26 @@ class Memoizer <I, O> implements Computable<I, O> {
         this.c = c;
     }
 
-    public O compute(final I in) throws InterruptedException {
+    public O compute(final I in){
         while (true) {
             Future<O> future = cache.get(in);
             if (future == null) {
                 FutureTask<O> futureTask = new FutureTask<>(() -> c.compute(in));
-                future = cache.putIfAbsent(in, futureTask); //利用原子操作：缺少则插入
+                future = cache.putIfAbsent(in, futureTask); //任务唯一性，利用原子操作：缺少则插入（插入成功返回null，插入失败返回已存在的value）
                 if (future == null) {
                     future = futureTask;
-                    futureTask.run(); //再次调用() -> c.compute(arg)
+                    futureTask.run(); //说明插入成功，然后开始执行任务
                 }
             }
 
             try {
                 return future.get();
             } catch (CancellationException e) {
-                cache.remove(in, future);
+                cache.remove(in, future); //当异步任务执行过程中被取消，则会抛出此异常，需要清除缓存中的任务（是非受检异常，原则上可以不处理，但是业务需要还是可以处理一下）
             } catch (ExecutionException e) {
-                throw LaunderThrowable.handle(e.getCause());
+                throw LaunderThrowable.handle(e.getCause()); //异步任务执行过程中自己抛出的异常会被封装在ExecutionException中
+            } catch (InterruptedException e) {
+                //当异步结果还未出来时，会抛出此异常；在这里的逻辑不用处理，再次进入while{}
             }
         }
     }
