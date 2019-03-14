@@ -2,6 +2,7 @@ package com.thomax.letsgo.advanced.thread;
 
 import com.thomax.letsgo.advanced.concurrent.LaunderThrowable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -14,6 +15,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Executor执行的任务的生命周期有4种：创建、提交、开始、完成
@@ -33,7 +36,7 @@ public class ExecutorHandling {
 
 class ExecutorServerHandling implements ExecutorService {
     /**
-     * ExecutorService的三种运行状态：运行、关闭、终止
+     * ExecutorService的3种运行状态：运行、关闭、终止
      */
     public void shutdown() { }  //平缓地关闭过程：队列中不再接受新的任务，等待队列中还未执行完成的任务，包括队列中还未开始执行的任务
     public List<Runnable> shutdownNow() { return null; } //粗暴的关闭过程：尝试取消队列中所有运行中的任务，并且不再启动队列中尚未开始执行的任务
@@ -53,7 +56,7 @@ class ExecutorServerHandling implements ExecutorService {
     public void execute(Runnable command) { }
 
     /**
-     * 获得线程池的几种方式
+     * 获得线程池的4种方式
      */
     public ExecutorService getExecutorService1() {
         return Executors.newFixedThreadPool(20); //固定容量的线程池，当其中某个线程发生未预期异常的时候，线程池会补充一个新的线程
@@ -69,40 +72,60 @@ class ExecutorServerHandling implements ExecutorService {
     }
 }
 
-class Rebderer<E> {
+/**
+ * 利用ExecutorCompletionService实现html渲染：
+ * 基于LinkedBlockingQueue的FIFO操作，实现多个IO队列的最佳性能
+ */
+class DrawHtml {
     private ExecutorService executorService;
 
-    public Rebderer(ExecutorService executorService) {
+    public DrawHtml(ExecutorService executorService) {
         this.executorService = executorService;
     }
 
-    public void a(List<E> list) {
-        CompletionService<E> completionService = new ExecutorCompletionService<>(executorService);
-        for (E e : list) {
-            completionService.submit(() -> in(e));
+    public void draw(String url) {
+        CompletionService<Img> completionService = new ExecutorCompletionService<>(executorService);
+        Matcher matcher = Pattern.compile("src\\s*=\\s*\"?(.*?)(\"|>|\\s+)").matcher(url); //形似从html中解析img分组出来
+        int count = matcher.groupCount();
+        for (int i = 0; i < count; i++) {
+            String imgUrl = matcher.group(i);
+            completionService.submit(() -> this.download(imgUrl));
         }
 
-        try {
-            for (int i = 0; i < list.size(); i++) {
-                Future<E> future = completionService.take();
-                E e = future.get();
-                this.out(e);
+        this.drawLine(url); //CPU密集型操作（先响应给用户大概的界面）
+
+        Future<Img> future = null;
+        Img img = null;
+        try { //IO密集型操作（后进行比较慢的渲染）
+            for (int i = 0; i < count; i++) {
+                future = completionService.take();
+                img = future.get(2, TimeUnit.SECONDS); //设置任务超时时间
+                this.drawImg(img);
             }
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); //中断当前线程，不影响当前线程后面的执行
+            Thread.currentThread().interrupt(); //future还没有值时抛出此异常，中断当前线程（即执行这个draw()方法的线程，不影响此线程后面的继续运行）
         } catch (ExecutionException e) {
             throw LaunderThrowable.handle(e);
+        } catch (TimeoutException e) {
+            this.failover(img); //超时后进行任务降级
+            future.cancel(true); //取消任务了
         }
     }
 
-    private E in(E e) {
-        //操作e，形似下载
-        return e;
+    private Img download(String imgUrl) {
+        return new Img(); //形似从imgUrl路径下载图片
     }
-    private E out(E e) {
-        //返回e，形似渲染
-        return e;
+    private void drawLine(String url) {
+        //解析html先渲染线条与文字
     }
+    private void drawImg(Img img) {
+        //渲染图片
+    }
+    private void failover(Img img) {
+        //降级操作，比如显示一个广告，没加载到就使用默认的
+    }
+
+    private class Img {}
 }
 
 
