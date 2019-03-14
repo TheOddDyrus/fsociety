@@ -70,7 +70,7 @@ class Memoizer<I, O> implements Computable<I, O> {
             } catch (ExecutionException e) {
                 throw LaunderThrowable.handle(e.getCause()); //异步任务执行过程中自己抛出的异常会被封装在ExecutionException中
             } catch (InterruptedException e) {
-                //当异步结果还未出来时，会抛出此异常；在这里的逻辑不用处理，再次进入while{}
+                //当时，会抛出此异常；在这里的逻辑不用处理，线程会再次进入while{}
             }
         }
     }
