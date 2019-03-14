@@ -19,7 +19,6 @@
         <module>letsgo</module>
         <module>bootspring</module>
         <module>cloudspring</module>
-        <module>bigdata</module>
     </modules>
 
     <properties>
