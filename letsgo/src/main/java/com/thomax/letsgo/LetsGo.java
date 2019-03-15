@@ -280,10 +280,10 @@ class VariablesClass{
 
 /**class0 - enum*/
 //Java 创建枚举类型要使用 enum 关键字，隐含了所创建的类型都是 java.lang.Enum 类的子类
-enum enumClass { 
+enum EnumClass {
     lamborghini(900),tata(2),Audi(50),fiat(15),honda(12);
     private int price;
-    enumClass(int p) {
+	EnumClass(int p) {
         price = p;
     }
     int getPrice() {
@@ -291,10 +291,10 @@ enum enumClass {
     } 
 }
 
-class useEnum {
+class UseEnum {
 	public void runEnum() {
 		System.out.println("所有汽车的价格：");
-        for (enumClass ec : enumClass.values()) {
+        for (EnumClass ec : EnumClass.values()) {
         	System.out.println(ec + " 需要 " + ec.getPrice() + " 千美元。");
         }
 	}
@@ -785,7 +785,7 @@ abstract class Dog extends Animal1 {
 
 
 /**interface1*/
-interface interfaceTest{
+interface InterfaceTest{
 //	可以把接口理解为一个特殊的抽象类，因为接口中只能定义“全局静态常量”和“抽象方法”
 //    int NUM = 10;//public static  final
 //    void fly();//public abstract
@@ -806,14 +806,14 @@ interface interfaceTest{
 }
 
 /**interface2*/
-interface interfaceTest2{
+interface InterfaceTest2{
 	int hello = 12;
 	int interTest3();
 	void interTest4();
 }
 
 /**class implements interface*/
-class MyInterface implements interfaceTest, interfaceTest2{
+class MyInterface implements InterfaceTest, InterfaceTest2{
 	public void interTest1() {}
 	public void interTest2() {}
 	public int interTest3() {
@@ -829,13 +829,13 @@ class MyInterface implements interfaceTest, interfaceTest2{
 }
 
 /**abstract class*/
-abstract class MyAbstractInterface implements interfaceTest, interfaceTest2{
+abstract class MyAbstractInterface implements InterfaceTest, InterfaceTest2{
 	//  抽象类无需要实现接口内所有方法
 	//非抽象类  需要实现接口内所有方法
 }
 
 /**interface3*/
-interface interfaceTest3 extends interfaceTest{
+interface InterfaceTest3 extends InterfaceTest{
 	//String hello = "45";
 	String hello2 = "45";
 	void interTest1();
