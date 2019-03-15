@@ -43,11 +43,16 @@ class ExecutorServerHandling implements ExecutorService {
     public boolean isShutdown() { return false; }
     public boolean isTerminated() { return false; }
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException { return false; } //调用后会调用shutdown()，产生同步关闭的效果
-
+    /**
+     * 提交任务
+     */
     public <T> Future<T> submit(Callable<T> task) { return null; }
     public <T> Future<T> submit(Runnable task, T result) { return null; }
     public Future<?> submit(Runnable task) { return null; }
-
+    /**
+     * 执行顺序无关性任务：
+     * invokeAll()执行所有，invokeAny()当成功执行完一个任务以后返回这个任务的结果，并终止其他未完成的任务
+     */
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException { return null; }
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException { return null; }
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException { return null; }
@@ -108,7 +113,7 @@ class DrawHtml {
             throw LaunderThrowable.handle(e);
         } catch (TimeoutException e) {
             this.failover(img); //超时后进行任务降级
-            future.cancel(true); //取消任务了
+            future.cancel(true); //取消超时任务
         }
     }
 
