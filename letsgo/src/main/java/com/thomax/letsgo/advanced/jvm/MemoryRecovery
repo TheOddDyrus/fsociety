@@ -208,6 +208,9 @@
         java -Xmx3550m -Xms3550m -Xmn2g -Xss128k -XX:ParallelGCThreads=20 -XX:+UseConcMarkSweepGC -XX:+UseParNewGC
         java -Xmx3550m -Xms3550m -Xmn2g -Xss128k -XX:+UseConcMarkSweepGC -XX:CMSFullGCsBeforeCompaction=5 -XX:+UseCMSCompactAtFullCollection
     }
+	6.3 普通项目VM option {
+		-Xms128m -Xmx750m -XX:MaxPermSize=512m -Dfile.encoding=utf-8
+	}
 }
 
 7.JDK1.8的元空间 {
