@@ -1,7 +1,7 @@
 package com.thomax.letsgo.advanced.concurrent;
 
 /**
- * 处理Throwable异常
+ * 公共异常处理
  */
 public class LaunderThrowable {
 
