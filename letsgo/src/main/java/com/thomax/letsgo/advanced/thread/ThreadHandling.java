@@ -1,12 +1,58 @@
 package com.thomax.letsgo.advanced.thread;
 
+import sun.nio.ch.Interruptible;
+
 import java.io.PrintWriter;
 import java.math.BigInteger;
+import java.security.AccessControlContext;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ThreadHandling { }
+/**
+ * Java线程详细方法
+ */
+public class ThreadHandling extends Thread {
+    /**
+     * 属性描述：
+     * 其中ThreadLocal.ThreadLocalMap属于同包下使用，这里案例无法识别到
+     */
+    private volatile String name;
+    private int            priority;
+    private Thread         threadQ;
+    private long           eetop;
+    private boolean     single_step;
+    private boolean     daemon = false;
+    private boolean     stillborn = false;
+    private Runnable target;
+    private ThreadGroup group;
+    private ClassLoader contextClassLoader;
+    private AccessControlContext inheritedAccessControlContext;
+    private static int threadInitNumber;
+    //ThreadLocal.ThreadLocalMap threadLocals = null;
+    //ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
+    private long stackSize;
+    private long nativeParkEventPointer;
+    private long tid;
+    private static long threadSeqNumber;
+    private volatile int threadStatus = 0;
+    volatile Object parkBlocker;
+    private volatile Interruptible blocker;
+    private final Object blockerLock = new Object();
+    public final static int MIN_PRIORITY = 1;
+    public final static int NORM_PRIORITY = 5;
+    public final static int MAX_PRIORITY = 10;
+    /**
+     * 方法描述 for Example
+     */
+    public synchronized void startExample() { super.start(); } //启动线程
+    public void runExample() { super.run(); } //定义线程的工作内容
+    public static void sleepExample() throws InterruptedException { Thread.sleep(1);} //线程进入阻塞状态，休眠1秒（不会释放持有的锁）
+    public static void sleepExample2() throws InterruptedException { Thread.sleep(0, 2000);} //休眠时间2000纳秒
+    public static void yieldExample() { Thread.yield(); } //暂停线程，将该线程转入到就绪状态，让CPU重新调度
+    public void joinExample() throws InterruptedException { super.join(); } //
+    public void joinExample2() throws InterruptedException { super.join(1); } //
+}
 
 /**
  * 中断案例1：Java并没有提供某种抢占式的机制来取消或终结线程，它提供了一种协作的方式来中断
@@ -100,7 +146,7 @@ class LogServer {
 class ThreadExceptionHandler extends Thread {
     @Override
     public void run() {
-        this.initExceptionHandler();
+        this.initExceptionHandler(); //线程启动时进行初始化
         /*business logic*/
     }
     private void initExceptionHandler() {
