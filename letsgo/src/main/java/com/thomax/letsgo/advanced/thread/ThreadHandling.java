@@ -10,48 +10,83 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Java线程详细方法
+ * Java线程详述
  */
 public class ThreadHandling extends Thread {
     /**
      * 属性描述：
      * 其中ThreadLocal.ThreadLocalMap属于同包下使用，这里案例无法识别到
      */
-    private volatile String name;
-    private int            priority;
-    private Thread         threadQ;
-    private long           eetop;
-    private boolean     single_step;
-    private boolean     daemon = false;
-    private boolean     stillborn = false;
-    private Runnable target;
-    private ThreadGroup group;
-    private ClassLoader contextClassLoader;
-    private AccessControlContext inheritedAccessControlContext;
-    private static int threadInitNumber;
-    //ThreadLocal.ThreadLocalMap threadLocals = null;
-    //ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
-    private long stackSize;
-    private long nativeParkEventPointer;
-    private long tid;
-    private static long threadSeqNumber;
-    private volatile int threadStatus = 0;
-    volatile Object parkBlocker;
-    private volatile Interruptible blocker;
-    private final Object blockerLock = new Object();
-    public final static int MIN_PRIORITY = 1;
-    public final static int NORM_PRIORITY = 5;
-    public final static int MAX_PRIORITY = 10;
+    private volatile String name; //线程名
+    private int            priority; //线程优先级
+    private Thread         threadQ; //保留属性，暂时没被使用
+    private long           eetop; //保留属性，暂时没被使用
+    private boolean     single_step; //保留属性，暂时没被使用
+    private boolean     daemon = false; //是否是守护线程
+    private boolean     stillborn = false; //保留属性，JVM的状态
+    private Runnable target; //初始化的任务
+    private ThreadGroup group; //线程所属的分组
+    private ClassLoader contextClassLoader; //此线程的上下文类加载器
+    private AccessControlContext inheritedAccessControlContext; //此线程的访问控制上下文
+    private static int threadInitNumber; //匿名线程的编号id
+    //ThreadLocal.ThreadLocalMap threadLocals = null; //线程持有的ThreadLocal<>的Map
+    //ThreadLocal.ThreadLocalMap inheritableThreadLocals = null; //可以被继承的ThreadLocal<>的Map
+    private long stackSize; //初始化线程以后，分配的栈内存大小
+    private long nativeParkEventPointer; //本机线程终止后还会保存到JVM的私有状态
+    private long tid; //线程id
+    private static long threadSeqNumber; //用于递增共享的线程id
+    private volatile int threadStatus = 0; //线程的生命周期的6种状态之一，初始值0为新建状态
+    volatile Object parkBlocker; //此属性可以提供给java.util.concurrent.locks.LockSupport进行操作(set and get)
+    private volatile Interruptible blocker; //设置阻止字段，在可中断的I/O操作中阻塞；通过java.nio代码中的sun.misc.SharedSecrets调用
+    private final Object blockerLock = new Object(); //内置对象锁
+    public final static int MIN_PRIORITY = 1; //线程优先级最小值，最容易被CPU先调度执行
+    public final static int NORM_PRIORITY = 5; //线程优先级默认值
+    public final static int MAX_PRIORITY = 10; //线程优先级最大值
     /**
      * 方法描述 for Example
      */
     public synchronized void startExample() { super.start(); } //启动线程
     public void runExample() { super.run(); } //定义线程的工作内容
-    public static void sleepExample() throws InterruptedException { Thread.sleep(1);} //线程进入阻塞状态，休眠1秒（不会释放持有的锁）
-    public static void sleepExample2() throws InterruptedException { Thread.sleep(0, 2000);} //休眠时间2000纳秒
-    public static void yieldExample() { Thread.yield(); } //暂停线程，将该线程转入到就绪状态，让CPU重新调度
-    public void joinExample() throws InterruptedException { super.join(); } //
-    public void joinExample2() throws InterruptedException { super.join(1); } //
+    public static Thread getCurrentThread() { return currentThread(); } //获得当前正在执行的线程
+    public static void sleepExample() throws InterruptedException { sleep(1);} //线程进入阻塞状态，休眠1秒（不会释放持有的锁）
+    public static void sleepExample2() throws InterruptedException { sleep(0, 2000);} //休眠时间2000纳秒
+    public static void yieldExample() { yield(); } //暂停线程，将该线程转入到就绪状态，让CPU重新调度
+    public void waitExample() throws InterruptedException { wait(); } //wait(0)，直接让线程进入等待状态
+    public void waitExample2() throws InterruptedException { wait(1); } //持续1秒为等待状态，超过1秒则自己唤醒
+    public void waitExample3() throws InterruptedException { wait(0, 2000); } //持续2000纳秒为等待状态，超过1秒则自己唤醒
+    public void joinExample() throws InterruptedException { join(); } //运行线程中调用此线程的join()以后会阻塞，等待此线程执行完，再执行运行线程的代码
+    public void joinExample2() throws InterruptedException { join(1); } //wait()1毫秒以后，再继续join()
+    public void joinExample3() throws InterruptedException { join(0, 2000); } //wait()2000纳秒以后，再继续join()
+    public void notifyExample() { notify(); } //唤醒一个等待中的线程并使该线程开始执行，由CPU调度，随机一个
+    public void notifyAllExample() { notifyAll(); } //唤醒所有等待中的线程，由CPU调度
+    /*线程的中断标志在Java源码里面是看不到的，由计算机系统实现*/
+    public void interruptExample() { interrupt(); } //使线程中断，并且不会中断一个正在运行的线程；如果此线程是阻塞状态，则会抛出一个异常（可以中断阻塞状态）
+    public boolean isInterruptedExample() { return isInterrupted(); } //调用Thread类中的native方法isInterrupted(false)，返回线程的中断状态
+    public static boolean interruptedExample() { return interrupted(); } //调用Thread类中的native方法isInterrupted(true)，返回线程的中断状态并且清空线程的中断状态
+    public void stopExample() { stop(); } //此方法会直接终止run()方法的调用，并且会抛出一个ThreadDeath错误，如果线程持有某个对象锁的话，会完全释放锁，导致对象状态不一致（已废弃）
+    public void destoryExample() { destroy(); } //已废弃，直接会出异常
+    public long getIdExample() { return getId(); } //获得线程id
+    public void modifyName() {
+        setName("new name:" + getName()); //get set name
+    }
+    public void modifyPriority() {
+        setPriority(1 + getPriority()); //get set 线程优先级（1～10，默认为5，值越小优先级越大）
+    }
+    public void modifyDaemon() { //守护线程依赖于创建它的线程，而用户线程则不依赖。当创建守护线程的线程运行完毕以后守护线程也会随着消亡，而用户线程则不会，用户线程会一直运行直到其运行完毕
+        boolean on = isDaemon();//判断是否是守护线程
+        setDaemon(on); //设置此线程是否为守护线程
+    }
+    /**
+     * 内部枚举：线程的生命周期
+     */
+    public enum State {
+        NEW, //新建
+        RUNNABLE, //就绪
+        BLOCKED, //阻塞，并且正在等待监视器锁
+        WAITING, //等待，可能被这些操作所触发：不带超时值的Object.wait、不带超时值的Thread.join
+        TIMED_WAITING, //定时等待，超时以后自己唤醒；可能被这些操作所触发：Thread.sleep、带有超时值的Object.wait、带有超时值的Thread.join、LockSupport.parkNanos、LockSupport.parkUntil
+        TERMINATED //终结
+    }
 }
 
 /**

@@ -7,7 +7,7 @@
     6.自旋时会适当放弃线程优先级之间的差异
 }
 
-重量级锁Synchronized {
+重量级锁synchronized {
     1.Contention List：竞争队列，所有请求锁的线程首先被放在这个竞争队列中
     2.Entry List：Contention List中那些有资格成为候选资源的线程被移动到Entry List中
     3.Wait Set：哪些调用wait方法被阻塞的线程被放置在这里
