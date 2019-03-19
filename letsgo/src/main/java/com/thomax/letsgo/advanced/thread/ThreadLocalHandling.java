@@ -6,10 +6,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
- * Thread中存在一个Map<ThreadLocal<XXX>, XXX> threadLocals的属性
+ * Thread类中存在一个Map<ThreadLocal<XXX>, XXX> threadLocals的属性
  * 当通过ThreadLocal<XXX>来保存线程封闭所需对象时，以这个ThreadLocal<XXX> this为key保存所需对象到上面的threadLocals中，
  * 这样就避免了在调用每个方法时都要传递执行上下文信息来获得对象，稍微进行了耦合
- * 也可以看做ThreadLocal<XXX>是Thread的工具类，外观的设计模式
+ * 也可以看做ThreadLocal<XXX>是Thread的工具类，属于外观设计模式
  */
 public class ThreadLocalHandling {
 

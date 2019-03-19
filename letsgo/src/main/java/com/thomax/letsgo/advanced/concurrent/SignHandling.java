@@ -44,7 +44,7 @@ class CountDownLatchHandling {
 }
 
 /**
- * 信号量，可以用来控制访问某个特定资源的操作数量，或者对容器施加边界
+ * 信号量Semaphore，可以用来控制访问某个特定资源的操作数量，或者对容器施加边界
  */
 class SemaphoreHandling<T> {
 
@@ -80,7 +80,7 @@ class SemaphoreHandling<T> {
 }
 
 /**
- * 栅栏可以使一定数量的参与方反复地在栅栏位置汇集
+ * 栅栏CyclicBarrier可以使一定数量的参与方反复地在栅栏位置汇集
  */
 class CellularAutomata {
     private final Board mainBoard;

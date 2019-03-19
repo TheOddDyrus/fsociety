@@ -45,36 +45,36 @@ public class ThreadHandling extends Thread {
     /**
      * 方法描述 for Example
      */
-    public synchronized void startExample() { super.start(); } //启动线程
-    public void runExample() { super.run(); } //定义线程的工作内容
+    public synchronized void start() { super.start(); } //启动线程
+    public void run() { super.run(); } //运行线程的工作内容
     public static Thread getCurrentThread() { return currentThread(); } //获得当前正在执行的线程
-    public static void sleepExample() throws InterruptedException { sleep(1);} //线程进入阻塞状态，休眠1秒（不会释放持有的锁）
-    public static void sleepExample2() throws InterruptedException { sleep(0, 2000);} //休眠时间2000纳秒
-    public static void yieldExample() { yield(); } //暂停线程，将该线程转入到就绪状态，让CPU重新调度
-    public void waitExample() throws InterruptedException { wait(); } //wait(0)，直接让线程进入等待状态
-    public void waitExample2() throws InterruptedException { wait(1); } //持续1秒为等待状态，超过1秒则自己唤醒
-    public void waitExample3() throws InterruptedException { wait(0, 2000); } //持续2000纳秒为等待状态，超过1秒则自己唤醒
-    public void joinExample() throws InterruptedException { join(); } //运行线程中调用此线程的join()以后会阻塞，等待此线程执行完，再执行运行线程的代码
-    public void joinExample2() throws InterruptedException { join(1); } //wait()1毫秒以后，再继续join()
-    public void joinExample3() throws InterruptedException { join(0, 2000); } //wait()2000纳秒以后，再继续join()
-    public void notifyExample() { notify(); } //唤醒一个等待中的线程并使该线程开始执行，由CPU调度，随机一个
-    public void notifyAllExample() { notifyAll(); } //唤醒所有等待中的线程，由CPU调度
+    public static void sleep1() throws InterruptedException { sleep(1);} //线程进入阻塞状态，休眠1秒（不会释放持有的锁）
+    public static void sleep2() throws InterruptedException { sleep(0, 2000);} //休眠时间2000纳秒
+    public static void yield() { yield(); } //暂停线程，将该线程转入到就绪状态，让CPU重新调度
+    public void wait1() throws InterruptedException { wait(); } //wait(0)，直接让线程进入等待状态
+    public void wait2() throws InterruptedException { wait(1); } //持续1秒为等待状态，超过1秒则自己唤醒
+    public void wait3() throws InterruptedException { wait(0, 2000); } //持续2000纳秒为等待状态，超过1秒则自己唤醒
+    public void join1() throws InterruptedException { join(); } //运行线程中调用此线程的join()以后会阻塞，等待此线程执行完，再执行运行线程的代码
+    public void join2() throws InterruptedException { join(1); } //wait()1毫秒以后，再继续join()
+    public void join3() throws InterruptedException { join(0, 2000); } //wait()2000纳秒以后，再继续join()
+    public void notify1() { notify(); } //唤醒一个等待中的线程并使该线程开始执行，由CPU调度，随机一个
+    public void notifyAll1() { notifyAll(); } //唤醒所有等待中的线程，由CPU调度
     /*线程的中断标志在Java源码里面是看不到的，由计算机系统实现*/
-    public void interruptExample() { interrupt(); } //使线程中断，并且不会中断一个正在运行的线程；如果此线程是阻塞状态，则会抛出一个异常（可以中断阻塞状态）
-    public boolean isInterruptedExample() { return isInterrupted(); } //调用Thread类中的native方法isInterrupted(false)，返回线程的中断状态
+    public void interrupt() { interrupt(); } //使线程中断，并且不会中断一个正在运行的线程；如果此线程是阻塞状态，则会抛出一个异常（可以中断阻塞状态）
+    public boolean isInterrupted() { return isInterrupted(); } //调用Thread类中的native方法isInterrupted(false)，返回线程的中断状态
     public static boolean interruptedExample() { return interrupted(); } //调用Thread类中的native方法isInterrupted(true)，返回线程的中断状态并且清空线程的中断状态
-    public void stopExample() { stop(); } //此方法会直接终止run()方法的调用，并且会抛出一个ThreadDeath错误，如果线程持有某个对象锁的话，会完全释放锁，导致对象状态不一致（已废弃）
-    public void destoryExample() { destroy(); } //已废弃，直接会出异常
-    public long getIdExample() { return getId(); } //获得线程id
+    public void stop1() { stop(); } //此方法会直接终止run()方法的调用，并且会抛出一个ThreadDeath错误，如果线程持有某个对象锁的话，会完全释放锁，导致对象状态不一致（已废弃）
+    public void destory1() { destroy(); } //已废弃，直接会出异常
+    public long getId() { return super.getId(); } //获得线程id
     public void modifyName() {
-        setName("new name:" + getName()); //get set name
+        super.setName("new name:" + super.getName()); //get set name
     }
     public void modifyPriority() {
-        setPriority(1 + getPriority()); //get set 线程优先级（1～10，默认为5，值越小优先级越大）
+        super.setPriority(1 + super.getPriority()); //get set 线程优先级（1～10，默认为5，值越小优先级越大）
     }
     public void modifyDaemon() { //守护线程依赖于创建它的线程，而用户线程则不依赖。当创建守护线程的线程运行完毕以后守护线程也会随着消亡，而用户线程则不会，用户线程会一直运行直到其运行完毕
-        boolean on = isDaemon();//判断是否是守护线程
-        setDaemon(on); //设置此线程是否为守护线程
+        boolean on = super.isDaemon();//判断是否是守护线程
+        super.setDaemon(on); //设置此线程是否为守护线程
     }
     /**
      * 内部枚举：线程的生命周期

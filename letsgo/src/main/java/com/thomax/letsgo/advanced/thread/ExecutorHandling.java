@@ -50,7 +50,7 @@ class ExecutorServerHandling implements ExecutorService {
     public Future<?> submit(Runnable task) { return null; }
     /**
      * 执行顺序无关性任务：
-     * invokeAll()执行所有，invokeAny()当成功执行完一个任务以后返回这个任务的结果，并终止其他未完成的任务
+     * invokeAll()执行所有，返回所有的执行结果；invokeAny()只会返回第一个执行成功的任务的结果，并终止其他未完成的任务（类似多个线程搜索多个盘内的文件，第一个获取到即可）
      */
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException { return null; }
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException { return null; }
