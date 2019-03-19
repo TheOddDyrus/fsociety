@@ -92,8 +92,9 @@ class CellularAutomata {
         int count = Runtime.getRuntime().availableProcessors(); //返回Java虚拟机的可用的处理器数量
         this.barrier = new CyclicBarrier(count, mainBoard::commitNewValues); //形参：(栅栏的最终信号量, 传入线程执行的内容)
         this.workers = new Worker[count];
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < count; i++) {
             workers[i] = new Worker(mainBoard.getSubBoard(count, i));
+        }
     }
 
     private class Worker implements Runnable {
@@ -105,9 +106,11 @@ class CellularAutomata {
 
         public void run() {
             while (!board.hasConverged()) {
-                for (int x = 0; x < board.getMaxX(); x++)
-                    for (int y = 0; y < board.getMaxY(); y++)
+                for (int x = 0; x < board.getMaxX(); x++) {
+                    for (int y = 0; y < board.getMaxY(); y++) {
                         board.setNewValue(x, y, computeValue(x, y));
+                    }
+                }
                 try {
                     barrier.await();  //栅栏信号量++(信号量起始值为0)，并阻塞当前线程（当栅栏的信号量等于count时停止所有阻塞，并将信号量清0）
                 } catch (InterruptedException | BrokenBarrierException ex) {
