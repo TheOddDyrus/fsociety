@@ -8,6 +8,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 线程池详述
@@ -45,6 +46,23 @@ public class ThreadPoolHandling extends ThreadPoolExecutor {
     }
     public ExecutorService getExecutorService4() {
         return Executors.newScheduledThreadPool(20); //固定容量的线程池，以延迟或定时的方式来执行线程，类似Timer（但是Timer只会创建一个线程，会出现任务计划频率被任务执行时间覆盖的问题）
+    }
+    /**
+     * 一个可以记录创建了多少次线程的线程工厂
+     */
+    class RecordThreadFactory implements ThreadFactory {
+        private AtomicLong aLong = new AtomicLong(0);
+        private ThreadFactory threadFactory = Executors.defaultThreadFactory(); //创建默认的线程工厂
+
+        @Override
+        public Thread newThread(Runnable r) {
+            aLong.incrementAndGet();
+            return threadFactory.newThread(r);
+        }
+
+        public int getTotal() {
+            return aLong.intValue();
+        }
     }
     /**
      * 如果不想让使用者在对线程池进行配置，可以如下操作：

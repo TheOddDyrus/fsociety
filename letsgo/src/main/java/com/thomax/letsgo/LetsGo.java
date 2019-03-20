@@ -74,7 +74,6 @@ import java.util.concurrent.FutureTask;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-//import java.io.Serializable;  //已经用完整路径来申明实例
 //import static com.atguigu.aaa.StaticClass.*; // 静态导入：导入一个类中所有的静态内容
 
 
