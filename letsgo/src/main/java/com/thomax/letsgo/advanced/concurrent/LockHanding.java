@@ -11,9 +11,28 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 
-public class LockHanding { }
+/**
+ * Lock提供了比synchronized更多的功能，性能也更好。但是要注意以下2点：
+ * 1.Lock不是Java语言内置的，synchronized是Java语言的关键字，因此是内置特性。而实现了Lock接口的类可以实现同步访问；
+ * 2.Lock和synchronized有一点非常大的不同，采用synchronized不需要用户去手动释放锁，当synchronized方法或者synchronized代码块执行完之后，系统会自动让线程释放对锁的占用；
+ *   而Lock则必须要用户去手动释放锁，如果没有主动释放锁，就有可能导致出现死锁现象
+ *
+ * 综述：在一些内置锁无法满足需求的条件下，ReentrantLock可以作为一种高级工具。当需要一些高级功能，比如：可定时、可轮询、可中断的锁获取操作、公平队列、非块结构的锁。
+ *      否则，还是应该优先使用synchronized
+ */
+public class LockHanding implements Lock {
+    public void lock() { } //主动获取锁，如果没有获取到则阻塞
+    public void lockInterruptibly() throws InterruptedException { } //中断没有成功获取锁的线程：如果有多个线程同时调用此方法获取锁，第一个获得到锁的线程会去调用其他线程的interrupt()
+    public boolean tryLock() { return false; } //尝试获取锁，获取成功返回true，非阻塞
+    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException { return false; } //在一个时间段内尝试获取锁，获取到锁以后立刻返回true，超时以后停止获取
+    public void unlock() { } //释放锁
+    public Condition newCondition() { return null; }
+}
 
 /**
  * 对象锁和类锁
@@ -139,5 +158,5 @@ class Point {
 
 /**
  * 常见原子操作：
- *  若没有则添加、若相等则移除||若相等则替换
+ *  若没有则添加、若相等则移除、若相等则替换
  */
