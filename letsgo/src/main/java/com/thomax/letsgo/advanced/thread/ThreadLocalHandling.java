@@ -26,8 +26,16 @@ public class ThreadLocalHandling {
     public static Connection getConnection() {
         return connectionHolder.get();
     }
-    static Connection getConnection2() {
+    public static Connection getConnection2() {
         return connectionHolder2.get();
+    }
+
+    //ThreadLocalMap中Entry继承自WeakReference<ThreadLocal<?>，不要直接将connectionHolder设为null，这样无法有效gc回收Entry内的引用
+    public static void removeConnection() {
+        connectionHolder.remove();
+    }
+    public static void removeConnection2() {
+        connectionHolder2.remove();
     }
 }
 

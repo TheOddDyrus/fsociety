@@ -27,3 +27,12 @@ IO密集型（I/O bound） {
 }
 
 
+Context switching - times in microseconds - smaller is better (2p/16K => 2个线程并行处理16K的数据量)
+-------------------------------------------------------------------------
+Host      OS             2p/0K 2p/16K 2p/64K 8p/16K 8p/64K 16p/16K 16p/64K
+                         ctxsw  ctxsw  ctxsw ctxsw  ctxsw   ctxsw   ctxsw
+--------- ------------- ------ ------ ------ ------ ------ ------- -------
+test1     Linux 2.6.21-  10.2   11.4   11.3   14.3   20.9    17.4    26.0
+test2     Linux 4.4.0-5  7.630  8.520  10.5   10.9   15.5    10.8    19.0
+
+
