@@ -14,6 +14,7 @@ package com.thomax.letsgo.handling;
 public class UnsafeHandling {
     /*
     private Unsafe unsafe;
+    private static final Unsafe unsafe2 = Unsafe.getUnsafe(); //一般源码内操作Unsafe是这样获取的
 
     public UnsafeHandling() throws IllegalAccessException, NoSuchFieldException {
         Field f = Unsafe.class.getDeclaredField("theUnsafe");

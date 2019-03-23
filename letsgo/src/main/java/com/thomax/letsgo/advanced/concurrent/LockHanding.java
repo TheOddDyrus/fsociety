@@ -23,12 +23,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Lock提供了比synchronized更多的功能，性能也更好。但是要注意以下2点：
  * 1.Lock不是Java语言内置的，synchronized是Java语言的关键字，因此是JVM内置特性。而实现了Lock接口的类可以实现同步访问；
  * 2.Lock和synchronized有一点非常大的不同，采用synchronized不需要用户去手动释放锁，当synchronized方法或者synchronized代码块执行完之后，系统会自动让线程释放对锁的占用；
- *   而Lock则必须要用户去手动释放锁，如果没有主动释放锁，就有可能导致出现死锁现象
- *
+ * 而Lock则必须要用户去手动释放锁，如果没有主动释放锁，就有可能导致出现死锁现象
+ * <p>
  * 综述：在一些内置锁无法满足需求的条件下，ReentrantLock可以作为一种高级工具。当需要一些高级功能，比如：可定时、可轮询、可中断的锁获取操作、公平队列、非块结构的锁(非块比如方法和属性)。
- *      否则，还是应该优先使用synchronized
+ * 否则，还是应该优先使用synchronized
  */
-public class LockHanding implements Lock , ReadWriteLock {
+public class LockHanding implements Lock, ReadWriteLock {
     /**
      * Lock接口
      */
@@ -40,8 +40,8 @@ public class LockHanding implements Lock , ReadWriteLock {
     public Condition newCondition() { return null; }
     /**
      * ReadWriteLock接口，适用于频繁读取的数据结构。复杂性稍微会更高，但是可以实现多种操作：
-     *  1.释放优先：当写入线程释放锁时，同时存在一个读与一个写的线程，那优先给哪个就是根据场景实现了
-     *  2.读线程插队：当读线程持有锁，此时有一个写线程在等待，那接下来新到达的读线程是否插队也是根据场景实现（如果插队过多会导致"线程饥饿"问题，写线程永远获得不到锁）
+     * 1.释放优先：当写入线程释放锁时，同时存在一个读与一个写的线程，那优先给哪个就是根据场景实现了
+     * 2.读线程插队：当读线程持有锁，此时有一个写线程在等待，那接下来新到达的读线程是否插队也是根据场景实现（如果插队过多会导致"线程饥饿"问题，写线程永远获得不到锁）
      */
     public Lock readLock() { return null; } //返回共享锁，进入条件：1.没有其他线程的写锁；2.没有写请求，或者有写请求但调用线程和持有锁的线程是同一个
     public Lock writeLock() { return null; } //返回排他锁：进入条件：1.没有其他线程的读锁，2.没有其他线程的写锁
@@ -77,11 +77,68 @@ public class LockHanding implements Lock , ReadWriteLock {
     }
 
     /**
-     * AQS方法详解：它一套多线程访问共享资源的同步器框架，许多同步类实现都依赖于它，如常用的ReentrantLock、Semaphore、CountDownLatch...
+     * AQS方法详解：
+     * 1.它定义两种资源共享方式：Exclusive（独占，只有一个线程能执行，如ReentrantLock）和Share（共享，多个线程可同时执行，如Semaphore、CountDownLatch）
+     * 2.以ReentrantLock为例，state初始化为0，表示未锁定状态。A线程lock()时，会调用tryAcquire()独占该锁并将state+1。此后，其他线程再tryAcquire()时就会失败，
+     * 直到A线程unlock()到state=0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A线程自己是可以重复获取此锁的（state会累加），这就是可重入的概念。
+     * 但要注意，获取多少次就要释放多么次，这样才能保证state是能回到零态的。
+     * 3.再以CountDownLatch以例，任务分为N个子线程去执行，state也初始化为N（注意N要与线程个数一致）。这N个子线程是并行执行的，每个子线程执行完后countDown()一次，
+     * state会CAS减1。等到所有子线程都执行完后(即state=0)，会unpark()主调用线程，然后主调用线程就会从await()函数返回，继续后余动作。
+     * <p>
+     * 一般来说，自定义同步器要么是独占方法，要么是共享方式，他们也只需实现tryAcquire-tryRelease、tryAcquireShared-tryReleaseShared中的一种即可。
+     * 但AQS也支持自定义同步器同时实现独占和共享两种方式，如ReentrantReadWriteLock
      */
-    class AQS extends AbstractQueuedSynchronizer {
+    class AQS extends AbstractQueuedSynchronizer { }
+}
 
+/**
+ * Mutex是一个不可重入的互斥锁实现。锁资源（AQS里的state）只有两种状态：0表示未锁定，1表示锁定
+ *
+ * 同步类在实现时一般都将自定义同步器（Sync）定义为内部类，供自己使用；而同步类自己（Mutex）则实现某个接口，对外服务。当然，接口的实现要直接依赖sync，它们在语义上也存在某种对应关系！！
+ * 在Sync里只用实现资源state的获取-释放方式tryAcquire-tryRelelase，至于线程的排队、等待、唤醒等，上层的AQS都已经实现好了，我们不用关心。
+ * 除了Mutex，ReentrantLock/CountDownLatch/Semphore这些同步类的实现方式都差不多，不同的地方就在获取-释放资源的方式tryAcquire-tryRelelase
+ */
+class Mutex implements Lock, java.io.Serializable {
+    private static class Sync extends AbstractQueuedSynchronizer { // 自定义同步器
+        protected boolean isHeldExclusively() {
+            return getState() == 1;
+        }
+        public boolean tryAcquire(int acquires) {
+            if (compareAndSetState(0, 1)) { //state为0才设置为1，不可重入！
+                setExclusiveOwnerThread(Thread.currentThread()); //设置为当前线程独占资源
+                return true;
+            }
+            return false;
+        }
+        protected boolean tryRelease(int releases) {
+            if (getState() == 0) { //既然来释放，那肯定就是已占有状态了。只是为了保险，多层判断！
+                throw new IllegalMonitorStateException();
+            }
+            setExclusiveOwnerThread(null);
+            setState(0);//释放资源，放弃占有状态
+            return true;
+        }
     }
+
+    private final Sync sync = new Sync(); //同步类的实现都依赖继承于AQS的自定义同步器
+
+    public void lock() {
+        sync.acquire(1); //获取资源，即便等待，直到成功才返回
+    }
+    public void unlock() {
+        sync.release(1); //释放资源
+    }
+    public boolean tryLock() {
+        return sync.tryAcquire(1); //尝试获取资源，要求立即返回
+    }
+    public boolean isLocked() {
+        return sync.isHeldExclusively(); //判断是否锁定状态
+    }
+
+    /*这里三个方法暂不实现*/
+    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException { return false; }
+    public void lockInterruptibly() throws InterruptedException { }
+    public Condition newCondition() { return null; }
 }
 
 /**
@@ -108,8 +165,10 @@ class ObjectLock {
  * synchronized是互斥锁，从继承角度来看也具有可重入性
  */
 class OriginalClass {
-    public synchronized void exec() {}
+    public synchronized void exec() {
+    }
 }
+
 class ReentrantClass extends OriginalClass {
     public synchronized void exec() {
         System.out.println("doing something");
@@ -162,9 +221,10 @@ class SynchronizedUtil<K, V> {
  * 线程安全性的委托：CAS.num是非线程安全的，它可以将线程安全的操作委托给AtomicLong
  */
 class CAS {
-     static AtomicLong atomicLong;
-     static long num = 0;
+    static AtomicLong atomicLong;
+    static long num = 0;
 }
+
 class SafeDelegate {
     private ExecutorService threadPool = Executors.newFixedThreadPool(100);
 
@@ -174,7 +234,7 @@ class SafeDelegate {
                 long cas = CAS.atomicLong.get();
                 long num = CAS.num;
                 /*
-                延时操作
+                一些逻辑操作，当整个线程的执行时间小于线程上下文切换时间时，CAS的操作效率高
                  */
                 num++;
                 if (CAS.atomicLong.compareAndSet(cas, cas + 1)) {
@@ -194,13 +254,16 @@ class SafeDelegate {
 class Point {
     private final int x;
     private int y;
+
     public Point(int x, final int y) {
         this.x = x;
         this.y = y;
     }
+
     public int getX() {
         return x;
     }
+
     public int getY() {
         return y;
     }
@@ -208,5 +271,5 @@ class Point {
 
 /**
  * 常见原子操作：
- *  若没有则添加、若相等则移除、若相等则替换
+ * 若没有则添加、若相等则移除、若相等则替换
  */
