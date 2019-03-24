@@ -3,7 +3,11 @@ package com.thomax.letsgo.advanced.concurrent;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import org.junit.runner.notification.RunListener.ThreadSafe;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -17,6 +21,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -37,66 +42,97 @@ public class LockHanding implements Lock, ReadWriteLock {
     public boolean tryLock() { return false; } //尝试获取锁，获取成功返回true，非阻塞
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException { return false; } //在一个时间段内尝试获取锁，获取到锁以后立刻返回true，超时以后停止获取
     public void unlock() { } //释放锁
-    public Condition newCondition() { return null; }
+    public Condition newCondition() { //对于每个Lock，可以有多个Condition对象，用它来替代传统的Object的wait()、notify()实现线程间的协作更加安全和高效（这个类位于AQS的内部，基于AQS实现）
+        return new Condition() {
+            public void await() throws InterruptedException { } //代替Object.wait()，当前线程进入等待状态直到被通知（signal）或者中断
+            public void awaitUninterruptibly() { } //当前线程进入等待状态直到被通知，在此过程中对中断信号不敏感，不支持中断当前线程
+            public long awaitNanos(long nanosTimeout) throws InterruptedException { return 0; } //当前线程进入等待状态，直到被通知、中断或者超时
+            public boolean await(long time, TimeUnit unit) throws InterruptedException { return false; } //当前线程进入等待状态，直到被通知、中断或者超时
+            public boolean awaitUntil(Date deadline) throws InterruptedException { return false; } //当前线程进入等待状态，直到被通知、中断或者超时
+            public void signal() { } //代替Object.notify()，唤醒一个等待在Condition上的线程，被唤醒的线程在方法返回前必须获得与Condition对象关联的锁
+            public void signalAll() { } //代替Object.notifyAll()，唤醒所有等待在Condition上的线程，能够从await()等方法返回的线程必须先获得与Condition对象关联的锁
+        };
+    }
     /**
      * ReadWriteLock接口，适用于频繁读取的数据结构。复杂性稍微会更高，但是可以实现多种操作：
      * 1.释放优先：当写入线程释放锁时，同时存在一个读与一个写的线程，那优先给哪个就是根据场景实现了
      * 2.读线程插队：当读线程持有锁，此时有一个写线程在等待，那接下来新到达的读线程是否插队也是根据场景实现（如果插队过多会导致"线程饥饿"问题，写线程永远获得不到锁）
      */
-    public Lock readLock() { return null; } //返回共享锁，进入条件：1.没有其他线程的写锁；2.没有写请求，或者有写请求但调用线程和持有锁的线程是同一个
-    public Lock writeLock() { return null; } //返回排他锁：进入条件：1.没有其他线程的读锁，2.没有其他线程的写锁
-
-    /**
-     * 可重入读写锁案例，在多读场景下性能比ReentrantLock去实现要好
-     */
-    class ReadWriteMap<K, V> {
-        private final Map<K, V> map;
-        private final ReadWriteLock lock = new ReentrantReadWriteLock();
-        private final Lock r = lock.readLock();
-        private final Lock w = lock.writeLock();
-        public ReadWriteMap(Map<K, V> map) {
-            this.map = map;
-        }
-
-        public V put(K key, V value) {
-            w.lock();
-            try {
-                return map.put(key, value);
-            } finally {
-                w.unlock();
-            }
-        }
-        public V get(K key) {
-            r.lock();
-            try {
-                return map.get(key);
-            } finally {
-                r.unlock();
-            }
-        }
-    }
-
+    public Lock readLock() { return null; } //返回共享锁，即共享方式，进入条件：1.没有其他线程的写锁；2.没有写请求，或者有写请求但调用线程和持有锁的线程是同一个
+    public Lock writeLock() { return null; } //返回排他锁，即独占方法，进入条件：1.没有其他线程的读锁；2.没有其他线程的写锁
     /**
      * AQS方法详解：
      * 1.它定义两种资源共享方式：Exclusive（独占，只有一个线程能执行，如ReentrantLock）和Share（共享，多个线程可同时执行，如Semaphore、CountDownLatch）
      * 2.以ReentrantLock为例，state初始化为0，表示未锁定状态。A线程lock()时，会调用tryAcquire()独占该锁并将state+1。此后，其他线程再tryAcquire()时就会失败，
-     * 直到A线程unlock()到state=0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A线程自己是可以重复获取此锁的（state会累加），这就是可重入的概念。
-     * 但要注意，获取多少次就要释放多么次，这样才能保证state是能回到零态的。
+     *   直到A线程unlock()到state=0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A线程自己是可以重复获取此锁的（state会累加），这就是可重入的概念。
+     *   但要注意，获取多少次就要释放多么次，这样才能保证state是能回到零态的。
      * 3.再以CountDownLatch以例，任务分为N个子线程去执行，state也初始化为N（注意N要与线程个数一致）。这N个子线程是并行执行的，每个子线程执行完后countDown()一次，
-     * state会CAS减1。等到所有子线程都执行完后(即state=0)，会unpark()主调用线程，然后主调用线程就会从await()函数返回，继续后余动作。
-     * <p>
+     *   state会CAS减1。等到所有子线程都执行完后(即state=0)，会unpark()主调用线程，然后主调用线程就会从await()函数返回，继续后余动作。
+     *
      * 一般来说，自定义同步器要么是独占方法，要么是共享方式，他们也只需实现tryAcquire-tryRelease、tryAcquireShared-tryReleaseShared中的一种即可。
      * 但AQS也支持自定义同步器同时实现独占和共享两种方式，如ReentrantReadWriteLock
      */
-    class AQS extends AbstractQueuedSynchronizer { }
+    class AQS extends AbstractQueuedSynchronizer {
+        /*AQS中获取操作和释放操作的标准形式：
+        boolean acquire() throws InterruptedException {
+            while (当前状态不允许获取操作) {
+                if (需要阻塞) {
+                    如果当前线程不在队列中，将其插入队列
+                    阻塞当前队列
+                } else {
+                    返回失败
+                }
+            }
+            根据独占方式/共享方式来更新同步器的状态
+            如果线程位于队列中，则将其移出队列
+            返回成功
+        }
+        void release() {
+            更新同步器的状态
+            if (新的状态允许被某个被阻塞的线程获取成功) {
+                解除队列中一个或多个线程的阻塞状态
+            }
+        }
+        */
+    }
 }
 
 /**
- * Mutex是一个不可重入的互斥锁实现。锁资源（AQS里的state）只有两种状态：0表示未锁定，1表示锁定
+ * 案例1：可重入读写锁案例，在多读场景下性能比ReentrantLock去实现要好
+ */
+class ReadWriteMap<K, V> {
+    private final Map<K, V> map;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock(); //不传参默认为可重入锁中的非公平锁，尝试获取锁的线程有可能会成功，如果不成功的话，则会进入AQS的队列中
+    private final Lock r = lock.readLock(); //共享锁，即共享方式
+    private final Lock w = lock.writeLock(); //排他锁，即独占方式
+    public ReadWriteMap(Map<K, V> map) {
+        this.map = map;
+    }
+
+    public V put(K key, V value) {
+        w.lock();
+        try {
+            return map.put(key, value);
+        } finally {
+            w.unlock();
+        }
+    }
+    public V get(K key) {
+        r.lock();
+        try {
+            return map.get(key);
+        } finally {
+            r.unlock();
+        }
+    }
+}
+
+/**
+ * 案例2：一个不可重入的互斥锁实现，AQS里的state只有两种状态：0表示未锁定，1表示锁定
  *
- * 同步类在实现时一般都将自定义同步器（Sync）定义为内部类，供自己使用；而同步类自己（Mutex）则实现某个接口，对外服务。当然，接口的实现要直接依赖sync，它们在语义上也存在某种对应关系！！
+ * 同步类在实现时一般都将自定义同步器（Sync）定义为内部类，供自己使用；而同步类自己（Mutex）则实现某个接口，对外服务。当然，接口的实现要直接依赖Sync，它们在语义上也存在某种对应关系！！
  * 在Sync里只用实现资源state的获取-释放方式tryAcquire-tryRelelase，至于线程的排队、等待、唤醒等，上层的AQS都已经实现好了，我们不用关心。
- * 除了Mutex，ReentrantLock/CountDownLatch/Semphore这些同步类的实现方式都差不多，不同的地方就在获取-释放资源的方式tryAcquire-tryRelelase
+ * 除了Mutex，ReentrantLock、CountDownLatch、emphore这些同步类的实现方式都差不多，不同的地方就在获取-释放资源的方式tryAcquire-tryRelelase
  */
 class Mutex implements Lock, java.io.Serializable {
     private static class Sync extends AbstractQueuedSynchronizer { // 自定义同步器
@@ -142,6 +178,55 @@ class Mutex implements Lock, java.io.Serializable {
 }
 
 /**
+ * 案例3：Condition实现一个有界缓存，实现生产者与消费者的阻塞队列关系，其通知关系比用Object.notify()更精确，效率比Object.notifyAll()高
+ */
+class ConditionBoundedBuffer<T> {
+    protected final Lock lock = new ReentrantLock(); //不传参默认为可重入锁中的非公平锁，尝试获取锁的线程有可能会成功，如果不成功的话，则会进入AQS的队列中
+    private final Condition notFull = lock.newCondition();
+    private final Condition notEmpty = lock.newCondition();
+    private final T[] items;
+    private int tail, head, count;
+    public ConditionBoundedBuffer(int size) {
+        items = (T[]) new Object[size];
+    }
+
+    public void put(T x) throws InterruptedException {
+        lock.lock();
+        try {
+            while (count == items.length) {
+                notFull.await(); //线程被Condition锁住进入阻塞，当被通知以后，所有线程只有一个会被唤醒
+            }
+            items[tail] = x;
+            if (++tail == items.length) {
+                tail = 0;
+            }
+            ++count;
+            notEmpty.signal(); //通知唤醒
+        } finally {
+            lock.unlock();
+        }
+    }
+    public T take() throws InterruptedException {
+        lock.lock();
+        try {
+            while (count == 0) {
+                notEmpty.await(); //线程被Condition锁住进入阻塞，当被通知以后，所有线程只有一个会被唤醒
+            }
+            T x = items[head];
+            items[head] = null;
+            if (++head == items.length) {
+                head = 0;
+            }
+            --count;
+            notFull.signal(); //通知唤醒
+            return x;
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+
+/**
  * 对象锁和类锁
  */
 @ThreadSafe
@@ -153,7 +238,6 @@ class ObjectLock {
             //对象锁只会锁住这个对象实例，因为相同类型对象可以有多个
         }
     }
-
     public void exec2() {
         synchronized (ObjectLock.class) {
             //类锁作用域为整个类，例如声明在静态方法上的synchronized也是持有的类锁
@@ -165,10 +249,8 @@ class ObjectLock {
  * synchronized是互斥锁，从继承角度来看也具有可重入性
  */
 class OriginalClass {
-    public synchronized void exec() {
-    }
+    public synchronized void exec() { }
 }
-
 class ReentrantClass extends OriginalClass {
     public synchronized void exec() {
         System.out.println("doing something");
@@ -219,12 +301,12 @@ class SynchronizedUtil<K, V> {
 
 /**
  * 线程安全性的委托：CAS.num是非线程安全的，它可以将线程安全的操作委托给AtomicLong
+ * （常见原子操作：若没有则添加、若相等则移除、若相等则替换）
  */
 class CAS {
     static AtomicLong atomicLong;
     static long num = 0;
 }
-
 class SafeDelegate {
     private ExecutorService threadPool = Executors.newFixedThreadPool(100);
 
@@ -259,17 +341,10 @@ class Point {
         this.x = x;
         this.y = y;
     }
-
     public int getX() {
         return x;
     }
-
     public int getY() {
         return y;
     }
 }
-
-/**
- * 常见原子操作：
- * 若没有则添加、若相等则移除、若相等则替换
- */

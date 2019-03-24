@@ -10,6 +10,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
+/**
+ * FutureTask中也是用AQS的同步状态来保存任务的状态，例如：正在运行、已完成、已取消
+ */
 public class FutureHandling {
 
     public CookUtil buy() throws InterruptedException, ExecutionException {
