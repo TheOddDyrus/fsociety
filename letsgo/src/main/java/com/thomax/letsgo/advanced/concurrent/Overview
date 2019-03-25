@@ -40,4 +40,5 @@
 *上下文切换属于计算密集型，开销大概5000~10000个时钟周期，大概几微秒
 *减少锁的持有时间也是对性能有极大提升，即排除那些并非需要同步的逻辑块
 *在synchronized优化以前，synchronized的性能是比ReentrantLock差很多的，但是自从synchronized引入了偏向锁，轻量级锁（自旋锁）后，两者的性能就差不多了
+*在竞争程度较高下，ReentrantLock会比CAS吞吐率高一点点，因为锁能更有效地避免竞争；在竞争程度适中下，CAS会比ReentrantLock吞吐率高一倍多，极限情况是单CPU中CAS一定会执行成功所以不会出现锁的阻塞情况
 reference from classpath:../schematic/markword-lock.png

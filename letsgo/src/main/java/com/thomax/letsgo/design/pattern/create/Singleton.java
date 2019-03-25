@@ -39,7 +39,8 @@ public class Singleton {
 
 //懒汉模式
 class OddOne {
-	private static OddOne oo = null;
+	/*第一种DLC的方式获得*/
+	private volatile static OddOne oo = null; //DCL方式的缺陷，需要加volatile弥补（oo的写操作不happen-before对它的读操作，利用volatile来限制JMM的指令重排序）
 
 	private OddOne() {}
 	
@@ -53,6 +54,14 @@ class OddOne {
 		}
 
 		return oo;
+	}
+
+	/*第二种内部类方式获得*/
+	private static class SingleHolder{
+		private static final OddOne oo = new OddOne(); //从JVM实现懒加载
+	}
+	public static OddOne getInstance2(){
+		return SingleHolder.oo;
 	}
 }
 
