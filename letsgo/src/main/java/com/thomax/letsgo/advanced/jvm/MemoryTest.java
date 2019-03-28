@@ -65,7 +65,7 @@ class ThreadOutOfMemory {
     }
     public void test() {
         while (true) {
-            Thread thread = new Thread(() -> dontStop());
+            Thread thread = new Thread(this::dontStop);
             thread.start();
         }
     }
