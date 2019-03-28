@@ -231,7 +231,7 @@ public class LetsGo {
         	public int compare(Object o1, Object o2){
                 return 20;
             }
-        };   
+        };
     }
     
 }
@@ -239,7 +239,7 @@ public class LetsGo {
 
 /**class0 - variables*/
 class VariablesClass{
-	//byte,short,char—> int —> long—> float —> double
+	//byte —> short,char —> int,float —> long,double
 	//一个字节（0000 0000）
 	byte byte1=127, byte2=-128; //1个字节 = 8位
 	Byte byteValue = new Byte((byte)123); //Byte default value = 0
@@ -252,13 +252,13 @@ class VariablesClass{
 	
 	int int1=2147483647, int2=-2147483648, int_default=0; //4个字节 = 32位
 	Integer integerValue = new Integer(12345); //Integer default value = 0
-	
-	long long1=9223372036854774807L, long2=-9223372036854774808L; //8个字节 = 64位
-	Long longValue = new Long(123456L); //Long default value = 0L
-	
+
 	float float1=3.402823e+38f, float2=1.401298e-45f; //4个字节 = 32位 ,float精度为6~7位，能保证6位为绝对精确，7位一般也是正确的，8位就不一定了(但不是说8位就绝对不对了)
 	Float floatValue = new Float(123.456f); //Float default value = 0.0f
 	
+	long long1=9223372036854774807L, long2=-9223372036854774808L; //8个字节 = 64位
+	Long longValue = new Long(123456L); //Long default value = 0L
+
 	double double1=1.797693e+308d, double2=4.9000000e-324d; //8个字节 = 64位 , double精度是15~16，能保证15，一般16
 	double boubleJava = 123.456; //Java里面的默认浮点类型为double，所以double有时候可以不用在结尾加一个d
 	Double doubleValue = new Double(123.456d); //Double default value = 0.0d
