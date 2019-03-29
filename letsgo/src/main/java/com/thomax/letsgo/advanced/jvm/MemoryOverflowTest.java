@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * 测试前请配置相对应的VM启动参数
  */
-public class MemoryTest {
+public class MemoryOverflowTest {
     public static void main(String[] args) {
         DirectOutOfMemory example = new DirectOutOfMemory();
         example.test();
