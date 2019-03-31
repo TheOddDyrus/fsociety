@@ -26,7 +26,7 @@ IO密集型（I/O bound） {
     所以，线程池的最佳大小= N * U * (1 + P)
 }
 
-3.最终，现代CPU的turbo boost会让每个核心的工作达到并行2个线程的效果，比如4核8线程的CPU实际应该可以产生6~7个并行的效果（可以当做可用的处理器数量）
+3.现代CPU的turbo boost会让每个核心的工作达到并行2个线程的效果，比如4核8线程的CPU
 
 
 Context switching - times in microseconds - smaller is better (2p/16K => 2个线程并行处理16K的数据量)
