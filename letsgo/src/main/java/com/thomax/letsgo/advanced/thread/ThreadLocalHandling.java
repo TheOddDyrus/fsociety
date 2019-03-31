@@ -18,7 +18,7 @@ public class ThreadLocalHandling {
 
     private static ThreadLocal<Connection> connectionHolder = new ThreadLocal<Connection>() {
         @Override
-        public Connection initialValue() { //ThreadLocal.get()的时候会调用initialValue()得到value和以自身为key保存到当前线程的threadLocals中
+        public Connection initialValue() { //ThreadLocal.get()的时候会调用initialValue()得到value和以自身为key保存到当前线程的threadLocals中（JDK1.7的写法）
             return DBUtils.getConnection();
         }
     };
