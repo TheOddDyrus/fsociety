@@ -33,7 +33,6 @@ public class SystemGetProperty {
 	user.dir  用户的当前工作目录
 */
 	public void runExample() {
-		@SuppressWarnings("unused")
         String str = System.getProperty("user.dir");
 	}
 }

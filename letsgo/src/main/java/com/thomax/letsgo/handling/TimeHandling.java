@@ -4,40 +4,39 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
+/**
+ * SimpleDateFormat所有格式：
+	G 年代标志符
+	y 年
+	M 月
+	d 日
+	h 时 在上午或下午 (1~12)
+	H 时 在一天中 (0~23)
+	m 分
+	s 秒
+	S 毫秒
+	E 星期
+	D 一年中的第几天
+	F 一月中第几个星期几
+	w 一年中第几个星期
+	W 一月中第几个星期
+	a 上午 / 下午 标记符
+	k 时 在一天中 (1~24)
+	K 时 在上午或下午 (0~11)
+	z 时区
+
+  java.util.Date与java.sql.Date互相转换：
+	① java.sql.Date sqlDate = new java.sql.Date((new java.util.Date()).getTime());
+	② java.sql.Time sqlTime = new java.sql.Time((new java.util.Date()).getTime());
+	③ java.sql.Timestamp sqlTimestamp = new java.sql.Timestamp((new java.util.Date()).getTime());
+	④ 像mysql内的DateTime或Year类型，利用SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS")来格式化得到
+ */
 public class TimeHandling {
 	public static void main(String[] args) {
 		Calendar ca = Calendar.getInstance();
 		System.out.println(ca.getTime());
 	}
 }
-
-
-/**SimpleDateFormat所有格式：
-		G 年代标志符
-	  	y 年
-	  	M 月
-	  	d 日
-	  	h 时 在上午或下午 (1~12)
-	  	H 时 在一天中 (0~23)
-	  	m 分
-	  	s 秒
-	  	S 毫秒
-	  	E 星期
-	  	D 一年中的第几天
-	  	F 一月中第几个星期几
-	  	w 一年中第几个星期
-	  	W 一月中第几个星期
-	  	a 上午 / 下午 标记符 
-	  	k 时 在一天中 (1~24)
-	  	K 时 在上午或下午 (0~11)
-	  	z 时区
-	  	
- *	java.util.Date与java.sql.Date互相转换：
-    	① java.sql.Date sqlDate = new java.sql.Date((new java.util.Date()).getTime());
-    	② java.sql.Time sqlTime = new java.sql.Time((new java.util.Date()).getTime());
-    	③ java.sql.Timestamp sqlTimestamp = new java.sql.Timestamp((new java.util.Date()).getTime());
-    	④ 像mysql内的DateTime或Year类型，利用SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS")来格式化得到
- */
 
 /**class1*/  //java.text.SimpleDateFormat; java.util.Date;
 class FormatTime{ 

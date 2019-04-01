@@ -8,29 +8,27 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.util.concurrent.Future;
-//import java.lang.annotation.*; //核心
 
-
-/*javadoc 工具软件识别以下标签:                                              
- *   @author	标识一个类的作者                                                
- *   @deprecated	指名一个过期的类或成员                                         
- *   {@docRoot}	指明当前文档根目录的路径                                        
- *   @exception	标志一个类抛出的异常                                          
- *   {@inheritDoc}	从直接父类继承的注释                                      
- *   {@link}	插入一个到另一个主题的链接                                           
- *   {@linkplain}	插入一个到另一个主题的链接，但是该链接显示纯文本字体                      
- *   @param	说明一个方法的参数	                                            
- *   @return	说明返回值类型
- *   @see	指定一个到另一个主题的链接
- *   @serial	说明一个序列化属性                  
- *   @serialData	说明通过writeObject( ) 和 writeExternal( )方法写的数据
- *   @serialField	说明一个ObjectStreamField组件                         
- *   @since	标记当引入一个特定的变化时
- *   @throws	和 @exception标签一样
- *   {@value}	显示常量的值，该常量必须是static属性
- *   @version	指定类的版本
+/**
+ * javadoc 工具软件识别以下标签:
+	@author	标识一个类的作者
+	@deprecated	指名一个过期的类或成员
+	{@docRoot}	指明当前文档根目录的路径
+	@exception	标志一个类抛出的异常
+	{@inheritDoc}	从直接父类继承的注释
+	{@link}	插入一个到另一个主题的链接
+	{@linkplain}	插入一个到另一个主题的链接，但是该链接显示纯文本字体
+	@param	说明一个方法的参数
+	@return	说明返回值类型
+	@see	指定一个到另一个主题的链接
+	@serial	说明一个序列化属性
+	@serialData	说明通过writeObject( ) 和 writeExternal( )方法写的数据
+	@serialField	说明一个ObjectStreamField组件
+	@since	标记当引入一个特定的变化时
+	@throws	和 @exception标签一样
+	{@value}	显示常量的值，该常量必须是static属性
+	@version	指定类的版本
  */
-
 @Retention(RetentionPolicy.RUNTIME) //代表注解运行时机
 @Target(ElementType.TYPE) //代表注解使用的位置
 public @interface JavaDoc { //自定义注解

@@ -230,7 +230,7 @@ class ConditionBoundedBuffer<T> {
 }
 
 /**
- * 对象锁和类锁
+ * synchronized的作用域
  */
 @ThreadSafe
 class ObjectLock {
@@ -240,11 +240,17 @@ class ObjectLock {
         synchronized (objLock) {
             //对象锁只会锁住这个对象实例，因为相同类型对象可以有多个
         }
+        synchronized (this) {
+            //this代表本身这个类的实例对象，作用域也是这个类的所有普通方法，效果和把synchronized加在普通方法上一样，只是锁住的代码面积较小
+        }
     }
     public void exec2() {
         synchronized (ObjectLock.class) {
             //类锁作用域为整个类，例如声明在静态方法上的synchronized也是持有的类锁
         }
+    }
+    public synchronized void exec3() {
+        //普通方法上的synchronized只会锁住所有的普通方法
     }
 }
 

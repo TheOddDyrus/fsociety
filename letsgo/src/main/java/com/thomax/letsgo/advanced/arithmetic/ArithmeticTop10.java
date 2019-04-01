@@ -2,7 +2,6 @@ package com.thomax.letsgo.advanced.arithmetic;
 
 /**
  * 10大计算机经典算法
- * @author thomax
  */
 public class ArithmeticTop10 {}
 
@@ -23,8 +22,7 @@ class FastSort {
         int temp;
 
         while (end > start) {
-            //从后往前比较：如果没有比关键值小的，比较下一个，直到有比关键值小的交换位置，然后又从前往后比较
-            while (end > start && a[end] >= key) {
+            while (end > start && a[end] >= key) { //从后往前比较：如果没有比关键值小的，比较下一个，直到有比关键值小的交换位置，然后又从前往后比较
                 end--;
                 if (a[end] <= key) {
                     temp = a[end];
@@ -32,8 +30,7 @@ class FastSort {
                     a[start] = temp;
                 }
             }
-            //从前往后比较：如果没有比关键值大的，比较下一个，直到有比关键值大的交换位置
-            while (end > start && a[start] <= key) {
+            while (end > start && a[start] <= key) { //从前往后比较：如果没有比关键值大的，比较下一个，直到有比关键值大的交换位置
                 start++;
                 if (a[start] >= key) {
                     temp = a[start];
