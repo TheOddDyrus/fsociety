@@ -216,6 +216,7 @@
 	}
 }
 
+
 7.JDK1.8的元空间 {
     在 JDK 1.8 中， HotSpot 已经没有“PermGen space”这个区间了，取而代之是一个叫做 Metaspace（元空间）的东西。
     JDK1.7中，存储在永久代的部分数据就已经转移到了Java Heap或者是 Native Heap。但永久代仍存在于JDK1.7中，并没完全移除 {
@@ -229,3 +230,16 @@
 　　-XX:MinMetaspaceFreeRatio  在GC之后，最小的Metaspace剩余空间容量的百分比，减少为分配空间所导致的垃圾收集
 　　-XX:MaxMetaspaceFreeRatio  在GC之后，最大的Metaspace剩余空间容量的百分比，减少为释放空间所导致的垃圾收集
 }
+
+
+8.Java解释器执行模型（不考虑异常处理）{
+    do {
+        自动计算PC寄存器的值加1；
+        根据PC寄存器的指示位置，从字节码流中取出操作码；
+        if (字节码存在操作数) 从字节码流中取出操作数；
+        执行操作码所定义的操作
+    } while (字节码流长度 > 0)
+}
+
+
+
