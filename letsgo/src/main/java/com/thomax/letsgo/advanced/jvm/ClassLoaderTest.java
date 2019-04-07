@@ -67,22 +67,15 @@ class CustomClassLoader {
             String fileName = name.substring(name.lastIndexOf(".") + 1) + ".class";
             InputStream is = getClass().getResourceAsStream(fileName);
             if (is == null) {
-                throw new ClassNotFoundException(name);
+                return super.loadClass(name); //此处会加载java中所有类的父类java.lang.Object
             }
-            int available;
             try {
-                available = is.available(); //获取读的文件所有的字节个数
+                int available = is.available(); //获取读的文件字节数
                 byte[] b = new byte[available];
-                is.read(b);
-                return defineClass(name, b, 0, b.length);
+                int readLength = is.read(b); //获取读到byte[]中的字节数
+                return defineClass(name, b, 0, readLength);
             } catch (IOException e) {
                 throw new ClassNotFoundException(name);
-            } finally {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
         }
     };
