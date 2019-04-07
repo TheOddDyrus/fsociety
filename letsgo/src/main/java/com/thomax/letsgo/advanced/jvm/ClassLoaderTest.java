@@ -15,12 +15,16 @@ public class ClassLoaderTest {
  * （CLass对象存放在方法区里面，这个对象将作为程序访问方法区中的这些类型数据的外部接口）
  */
 class SuperClass {
-    static { System.out.println("super class"); }
+    static {
+        System.out.println("super class");
+    }
     public static int value = 123;
     public static final String hello = "hello";
 }
 class SubClass extends SuperClass {
-    static { System.out.println("sub class"); }
+    static {
+        System.out.println("sub class");
+    }
 }
 class NotInit {
     public void test1() {
