@@ -9,7 +9,7 @@ package com.thomax.letsgo.advanced.jvm;
  */
 public class MemoryRecoveryTest {
     public static void main(String[] args) {
-        Finalize4GC example = new Finalize4GC();
+        SoltRecovery example = new SoltRecovery();
         example.test();
     }
 }
@@ -44,5 +44,19 @@ class Finalize4GC {
             e.printStackTrace();
         }
 
+    }
+}
+
+/**
+ * 帧栈空间的局部变量表中的Slot的复用：尽可能在帧栈长时间不能回收时，将占内存较大的且下游不使用的对象设为null
+ * JVM options: -verbose:gc （查看gc详情）
+ */
+class SoltRecovery {
+    public void test() {
+        {
+            byte[] placeHolder = new byte[64 * 1204 * 1024];
+        }
+        int a = 0; //placeHolder所占用的Slot会被这个变量a复用，所以会成功回收placeHolder的内存（如果没有这句placeHolder的内存回收不会成功），同理直接将placeHolder设为null也是一样的
+        System.gc();
     }
 }
