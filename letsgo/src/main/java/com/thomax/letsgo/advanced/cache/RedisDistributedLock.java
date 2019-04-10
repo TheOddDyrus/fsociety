@@ -10,6 +10,7 @@ import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RedisDistributedLock {
 
     private JedisPool jedisPool;
+    private boolean flag = true;
 
     public RedisDistributedLock() {
         JedisPoolConfig config = new JedisPoolConfig();
@@ -61,7 +63,7 @@ public class RedisDistributedLock {
                 try {
                     Thread.sleep(10); //while周期不成功则休眠一下，防止一直提交
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    //
                 }
             }
         } catch (JedisException e) {
@@ -100,9 +102,7 @@ public class RedisDistributedLock {
     }
 
     public void closeJedis() {
-        if (jedisPool != null) {
-            jedisPool.close();
-        }
+        jedisPool.close();
     }
 }
 
@@ -122,19 +122,19 @@ class SeckillServer {
     public boolean order() {
         if (total == 0) { //防止多次调用
             System.out.println("秒杀结束！");
-            //lock.closeJedis();
             return false;
         }
         String indentifier = lock.lockWithTimeout("resourceX", 5000, 1);
         System.out.println(Thread.currentThread().getName() + "获得了锁");
         if (total == 0) { //防止获得锁后total已经没有数量了
             System.out.println("秒杀结束！");
-            //lock.closeJedis();
             return false;
         }
         System.out.println(--total); //秒杀剩余数，分布式锁保证了total是线程安全的
-        for (int j, i = 1; i < Integer.MAX_VALUE; i++) {
-            j = 1234256789 / i; //模拟500毫秒业务耗时
+        try {
+            Thread.sleep(100); //模拟业务
+        } catch (InterruptedException e) {
+            //
         }
         return lock.releaseLock("resourceX", indentifier);
     }
@@ -142,42 +142,41 @@ class SeckillServer {
     public static void main(String[] args) {
         ExecutorService executorService = Executors.newFixedThreadPool(150); //假设tomcat分配最大150个线程
         SeckillServer seckillServer = new SeckillServer(500); //设置秒杀服务的初始值=500
-        Queue<Future<Boolean>> queue = new LinkedBlockingQueue<>();
+        List<Future<Boolean>> list = new Vector<>();
         AtomicBoolean atomicBoolean = new AtomicBoolean(true);
-        boolean monitor = true;
-        /*模拟秒杀服务*/
-        while (atomicBoolean.get()) {
-            Future<Boolean> future = executorService.submit(seckillServer::order);//模拟每个接口在秒杀时的作业情况（获得锁 -> 中间业务 -> 释放锁）
-            queue.offer(future);
 
-            if (monitor) { //开启一个线程去监听异步结果，如果秒杀结束则停止模拟接口发起的作业
-                Thread thread = new Thread(() -> {
-                    while (true) {
-                        Future<Boolean> futureX = queue.poll();
+        Thread thread = new Thread(() -> { //开启一个线程去监听异步结果，如果秒杀结束则停止模拟接口发起的作业
+            while (true) {
+                int size = list.size();
+                if (size > 0) {
+                    for (int i = 0; i < size; i++) {
+                        Future<Boolean> futureX = list.get(i);
                         try {
-                            if (futureX != null && !futureX.get()) {
-                                atomicBoolean.set(false); //终止秒杀服务
-                                return;
+                            if (futureX.isDone()) {
+                                if(!futureX.get()) {
+                                    atomicBoolean.set(false); //终止秒杀服务
+                                    return;
+                                } else {
+                                    list.remove(futureX);
+                                    break;
+                                }
                             }
                         } catch (InterruptedException | ExecutionException e) {
-                            e.printStackTrace();
+                            //
                         }
                     }
-
-                });
-                monitor = false;
-                thread.start();
-            }
-            /*try {
-                if (!future.get()) {
-                    break; //结束秒杀服务
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); //说明还未返回结果，设置当前线程为中断状态，等待下一次被CPU调度
-            } catch (ExecutionException e) {
-                throw LaunderThrowable.handle(e);
-            }*/
+            }
+        });
+        thread.start();
+
+        /*模拟秒杀服务*/
+        while (atomicBoolean.get()) {
+            Future<Boolean> future = executorService.submit(seckillServer::order); //模拟每个接口在秒杀时的作业情况（获得锁 -> 中间业务 -> 释放锁）
+            list.add(future);
         }
+
         executorService.shutdownNow();
+        seckillServer.lock.closeJedis();
     }
 }
