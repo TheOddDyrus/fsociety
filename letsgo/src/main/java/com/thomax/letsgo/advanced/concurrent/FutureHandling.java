@@ -67,7 +67,7 @@ class Memoizer<I, O> implements Computable<I, O> {
             }
 
             try {
-                return future.get();
+                return future.get(); //调用get()时会阻塞
             } catch (CancellationException e) {
                 cache.remove(in, future); //当异步任务执行过程中被取消，则会抛出此异常，需要清除缓存中的任务（是非受检异常，原则上可以不处理，但是业务需要还是可以处理一下）
             } catch (ExecutionException e) {
