@@ -1,28 +1,20 @@
 package com.thomax.letsgo.advanced.cache;
 
-import com.thomax.letsgo.advanced.concurrent.LaunderThrowable;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.util.ArrayUtil;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisException;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.UUID;
-import java.util.Vector;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Redis实现的分布式锁
@@ -30,11 +22,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RedisDistributedLock {
 
     private JedisPool jedisPool;
-    private boolean flag = true;
 
     public RedisDistributedLock() {
         JedisPoolConfig config = new JedisPoolConfig();
-        config.setMaxTotal(200); //假设tomcat设置线程总数+50
+        config.setMaxTotal(150);
         config.setMaxIdle(8);
         config.setMaxWaitMillis(1000 * 100);
         config.setTestOnBorrow(true);
@@ -43,9 +34,10 @@ public class RedisDistributedLock {
 
     /**
      * 加锁
-     * @param locaName 锁的key
+     *
+     * @param locaName       锁的key
      * @param acquireTimeout 获取超时时间（毫秒）
-     * @param lockExpire 锁的超时时间（秒）
+     * @param lockExpire     锁的超时时间（秒）
      * @return 锁标识
      */
     public String lockWithTimeout(String locaName, long acquireTimeout, int lockExpire) {
@@ -75,7 +67,8 @@ public class RedisDistributedLock {
 
     /**
      * 释放锁
-     * @param lockName 锁的key
+     *
+     * @param lockName   锁的key
      * @param identifier 释放锁的标识
      */
     public boolean releaseLock(String lockName, String identifier) {
@@ -136,7 +129,7 @@ class SeckillServer {
             System.out.println(Thread.currentThread().getName() + "获得了锁");
             System.out.println(--total); //秒杀剩余数，分布式锁保证了total是线程安全的
             try {
-                Thread.sleep(100); //模拟业务
+                Thread.sleep(20); //模拟业务
             } catch (InterruptedException e) {
                 //
             }
@@ -150,19 +143,28 @@ class SeckillServer {
     public static void main(String[] args) {
         ExecutorService executorService = Executors.newFixedThreadPool(150); //假设tomcat分配最大150个线程
         SeckillServer seckillServer = new SeckillServer(500); //设置秒杀服务的初始值=500
-        List<Future<Boolean>> list = new Vector<>();
+        List<Future<Boolean>> list = Collections.synchronizedList(new LinkedList<>());
+        CountDownLatch monitorLock = new CountDownLatch(1);
+        long startTime = System.currentTimeMillis();
 
-        Thread thread = new Thread(() -> { //开启一个线程去监听异步结果，如果秒杀结束则停止模拟接口发起的作业
+        /*创建一个线程准备去监听异步结果，如果秒杀结束则关闭秒杀业务*/
+        Thread thread = new Thread(() -> {
+            try {
+                monitorLock.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             while (true) {
-                int size = list.size();
-                if (size > 0) {
-                    for (int i = 0; i < size; i++) {
-                        Future<Boolean> futureX = list.get(i);
-                        if (futureX.isDone()) {
-                            list.remove(futureX);
-                        }
+                for (Future future : list) {
+                    if (future != null && future.isDone()) {
+                        list.remove(future);
+                        break;
                     }
-                } else {
+                }
+                if (list.size() == 0) {
+                    executorService.shutdownNow();
+                    seckillServer.lock.closeJedis();
+                    System.out.println("++++++++++++++++监听结束，共耗时：" + (System.currentTimeMillis() - startTime) + "毫秒");
                     return;
                 }
             }
@@ -170,14 +172,10 @@ class SeckillServer {
         thread.start();
 
         /*模拟秒杀服务，1000个用户任务*/
-       for (int i = 0; i < 1000; i++) {
-            Future<Boolean> future = executorService.submit(seckillServer::order); //模拟每个接口在秒杀时的作业情况（获得锁 -> 中间业务 -> 释放锁）
+        for (int i = 0; i < 1000; i++) {
+            Future<Boolean> future = executorService.submit(seckillServer::order);
             list.add(future);
         }
-
-        while (list.size() == 0) {
-            executorService.shutdownNow();
-            seckillServer.lock.closeJedis();
-        }
+        monitorLock.countDown(); //释放监听线程的闭锁
     }
 }
