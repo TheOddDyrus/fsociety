@@ -113,6 +113,8 @@ public class RedisDistributedLock {
 class SeckillServer {
 
     private int total;
+    private int lockNum = 0;
+    private int invalidNum = 0;
 
     private RedisDistributedLock lock = new RedisDistributedLock();
 
@@ -122,12 +124,12 @@ class SeckillServer {
 
     public boolean order() {
         if (total == 0) { //防止多次调用
-            System.out.println("秒杀结束！");
+            System.out.println("秒杀结束！!无效访问: " + ++invalidNum);
             return false;
         }
         String indentifier = lock.lockWithTimeout("resourceX", 5000, 1);
         if (total == 0) { //防止获得锁后total已经没有数量了
-            System.out.println("秒杀结束**！");
+            System.out.println("秒杀结束**冗余锁竞争: " + ++lockNum);
             return false;
         }
         if (StringUtils.isNotEmpty(indentifier)) {
@@ -149,36 +151,26 @@ class SeckillServer {
         ExecutorService executorService = Executors.newFixedThreadPool(150); //假设tomcat分配最大150个线程
         SeckillServer seckillServer = new SeckillServer(500); //设置秒杀服务的初始值=500
         List<Future<Boolean>> list = new Vector<>();
-        AtomicBoolean atomicBoolean = new AtomicBoolean(true);
 
         Thread thread = new Thread(() -> { //开启一个线程去监听异步结果，如果秒杀结束则停止模拟接口发起的作业
             while (true) {
                 int size = list.size();
-                System.out.println("++++++++++++++++++++++++++++++++++++++++++size=" + size);
                 if (size > 0) {
                     for (int i = 0; i < size; i++) {
                         Future<Boolean> futureX = list.get(i);
-                        try {
-                            if (futureX.isDone()) {
-                                if(!futureX.get()) {
-                                    atomicBoolean.set(false); //终止秒杀服务
-                                    return;
-                                } else {
-                                    list.remove(futureX);
-                                    break;
-                                }
-                            }
-                        } catch (InterruptedException | ExecutionException e) {
-                            //
+                        if (futureX.isDone()) {
+                            list.remove(futureX);
                         }
                     }
+                } else {
+                    return;
                 }
             }
         });
         thread.start();
 
-        /*模拟秒杀服务*/
-        while (atomicBoolean.get()) {
+        /*模拟秒杀服务，1000个用户任务*/
+       for (int i = 0; i < 1000; i++) {
             Future<Boolean> future = executorService.submit(seckillServer::order); //模拟每个接口在秒杀时的作业情况（获得锁 -> 中间业务 -> 释放锁）
             list.add(future);
         }
