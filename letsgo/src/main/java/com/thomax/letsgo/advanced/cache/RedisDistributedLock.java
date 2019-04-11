@@ -2,6 +2,7 @@ package com.thomax.letsgo.advanced.cache;
 
 import com.thomax.letsgo.advanced.concurrent.LaunderThrowable;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.util.ArrayUtil;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -33,7 +34,7 @@ public class RedisDistributedLock {
 
     public RedisDistributedLock() {
         JedisPoolConfig config = new JedisPoolConfig();
-        config.setMaxTotal(150);
+        config.setMaxTotal(200); //假设tomcat设置线程总数+50
         config.setMaxIdle(8);
         config.setMaxWaitMillis(1000 * 100);
         config.setTestOnBorrow(true);
@@ -67,7 +68,7 @@ public class RedisDistributedLock {
                 }
             }
         } catch (JedisException e) {
-            e.printStackTrace();
+            return null;
         }
         return null;
     }
@@ -125,18 +126,23 @@ class SeckillServer {
             return false;
         }
         String indentifier = lock.lockWithTimeout("resourceX", 5000, 1);
-        System.out.println(Thread.currentThread().getName() + "获得了锁");
         if (total == 0) { //防止获得锁后total已经没有数量了
-            System.out.println("秒杀结束！");
+            System.out.println("秒杀结束**！");
             return false;
         }
-        System.out.println(--total); //秒杀剩余数，分布式锁保证了total是线程安全的
-        try {
-            Thread.sleep(100); //模拟业务
-        } catch (InterruptedException e) {
-            //
+        if (StringUtils.isNotEmpty(indentifier)) {
+            System.out.println(Thread.currentThread().getName() + "获得了锁");
+            System.out.println(--total); //秒杀剩余数，分布式锁保证了total是线程安全的
+            try {
+                Thread.sleep(100); //模拟业务
+            } catch (InterruptedException e) {
+                //
+            }
+            lock.releaseLock("resourceX", indentifier);
+        } else {
+            order();
         }
-        return lock.releaseLock("resourceX", indentifier);
+        return true;
     }
 
     public static void main(String[] args) {
@@ -148,6 +154,7 @@ class SeckillServer {
         Thread thread = new Thread(() -> { //开启一个线程去监听异步结果，如果秒杀结束则停止模拟接口发起的作业
             while (true) {
                 int size = list.size();
+                System.out.println("++++++++++++++++++++++++++++++++++++++++++size=" + size);
                 if (size > 0) {
                     for (int i = 0; i < size; i++) {
                         Future<Boolean> futureX = list.get(i);
@@ -176,7 +183,9 @@ class SeckillServer {
             list.add(future);
         }
 
-        executorService.shutdownNow();
-        seckillServer.lock.closeJedis();
+        while (list.size() == 0) {
+            executorService.shutdownNow();
+            seckillServer.lock.closeJedis();
+        }
     }
 }
