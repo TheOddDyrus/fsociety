@@ -156,7 +156,7 @@ class SeckillServer {
             }
             while (true) {
                 for (Future future : list) {
-                    if (future != null && future.isDone()) {
+                    if (future.isDone()) {
                         list.remove(future);
                         break;
                     }
