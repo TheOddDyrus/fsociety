@@ -120,12 +120,12 @@ class SeckillServer {
             System.out.println("秒杀结束！!无效访问: " + ++invalidNum);
             return false;
         }
-        String indentifier = lock.lockWithTimeout("resourceX", 5000, 1);
+        String identifier = lock.lockWithTimeout("resourceX", 5000, 1);
         if (total == 0) { //防止获得锁后total已经没有数量了
             System.out.println("秒杀结束**冗余锁竞争: " + ++lockNum);
             return false;
         }
-        if (StringUtils.isNotEmpty(indentifier)) {
+        if (StringUtils.isNotEmpty(identifier)) {
             System.out.println(Thread.currentThread().getName() + "获得了锁");
             System.out.println(--total); //秒杀剩余数，分布式锁保证了total是线程安全的
             try {
@@ -133,7 +133,7 @@ class SeckillServer {
             } catch (InterruptedException e) {
                 //
             }
-            lock.releaseLock("resourceX", indentifier);
+            lock.releaseLock("resourceX", identifier);
         } else {
             order();
         }
