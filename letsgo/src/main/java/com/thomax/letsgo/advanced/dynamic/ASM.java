@@ -1,4 +1,4 @@
-package com.thomax.letsgo.handling;
+package com.thomax.letsgo.advanced.dynamic;
 
 import org.springframework.asm.ClassWriter;
 import org.springframework.asm.MethodVisitor;

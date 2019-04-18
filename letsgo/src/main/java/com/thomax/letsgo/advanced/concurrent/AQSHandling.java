@@ -8,7 +8,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
 
-public class SignHandling { }
+public class AQSHandling { }
 
 /**
  *  CountDownLatch是一种灵活的闭锁实现，但是只能使用一次，基于AQS
