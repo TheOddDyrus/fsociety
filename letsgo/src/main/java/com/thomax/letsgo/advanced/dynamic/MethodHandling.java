@@ -15,15 +15,16 @@ public class MethodHandling {
         }
     }
 
-    private static MethodHandle getPrintlnMH(Object receiver) {
-        MethodType methodType = MethodType.methodType(void.class, String.class);
-        try {
-            return MethodHandles.lookup().findVirtual(receiver.getClass(), "println", methodType);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return null;
+    private static MethodHandle getPrintlnMH(Object receiver) throws NoSuchMethodException, IllegalAccessException {
+        MethodType methodType = MethodType.methodType(void.class, String.class); //1.返回值类型, 2.方法中参数类型...
+        return MethodHandles.lookup().findVirtual(receiver.getClass(), "println", methodType);
     }
+
+    public static void main(String[] args) throws Throwable {
+        Object obj1 = new ClassX();
+        getPrintlnMH(obj1).invokeExact("ClassX");
+        Object obj2 = System.out;
+        getPrintlnMH(obj2).invokeExact("System.out");
+    }
+
 }
