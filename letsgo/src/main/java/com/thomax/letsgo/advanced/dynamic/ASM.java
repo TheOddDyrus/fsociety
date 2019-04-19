@@ -8,7 +8,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 
 /**
- * cglib动态代理底层使用ASM直接生成字节码
+ * ASM是一个强大的框架，利用它我们可以做到：
+ *   1、获得class文件的详细信息，包括类名、父类名、接口、成员名、方法名、方法参数名、局部变量名、元数据等
+ *   2、对class文件进行动态修改，如增加、删除、修改类方法、在某个方法中添加指令等
+ *   3、CGLIB（动态代理）是对ASM的封装，简化了ASM的操作，降低了ASM的使用门槛
  */
 public class ASM {
 

@@ -12,7 +12,7 @@ public class Reflect {
 
     public void reflectExample() throws Exception {
         //得到Class类的对象的三种方法：
-        Class<?> clazz1 = Class.forName("letsgo.Frank");
+        Class<?> clazz1 = Class.forName("com.thomax.letsgo.advanced.dynamic.Reflect.Frank");
         Class<?> clazz2 = (new Frank()).getClass();
         Class<?> clazz3 = Frank.class;
 
