@@ -21,8 +21,6 @@ public class ASM {
         String className = "com/thomax/asm/HelloWorld";
         classWriter.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC, className, null,
                 "java/lang/Object", null);
-
-
         MethodVisitor initVisitor = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "<init>",
                 "()V", null, null);
         initVisitor.visitCode();

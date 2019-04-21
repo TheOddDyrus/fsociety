@@ -3,6 +3,9 @@ package com.thomax.letsgo.advanced.jvm;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * 类加载过程：加载、验证、准备、解析、初始化
+ */
 public class ClassLoaderTest {
     public static void main(String[] args) {
         CustomClassLoader example = new CustomClassLoader();
