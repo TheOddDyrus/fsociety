@@ -29,9 +29,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Lock提供了比synchronized更多的功能，性能也更好。但是要注意以下2点：
- * 1.Lock不是Java语言内置的，synchronized是Java语言的关键字，因此是JVM内置特性。而实现了Lock接口的类可以实现同步访问；
+ * 1.Lock不是Java语言内置的，实现了Lock接口的类可以实现同步访问；synchronized是Java语言的关键字，因此是JVM内置特性，随着JDK版本提高内置CAS以后性能愈发提高。
  * 2.Lock和synchronized有一点非常大的不同，采用synchronized不需要用户去手动释放锁，当synchronized方法或者synchronized代码块执行完之后，系统会自动让线程释放对锁的占用；
- * 而Lock则必须要用户去手动释放锁，如果没有主动释放锁，就有可能导致出现死锁现象
+ *   而Lock则必须要用户去手动释放锁，如果没有主动释放锁，就有可能导致出现死锁现象。
  *
  * 综述：在一些内置锁无法满足需求的条件下，ReentrantLock可以作为一种高级工具。当需要一些高级功能，比如：可定时、可轮询、可中断的锁获取操作、公平队列、非块结构的锁(非块比如方法和属性)。
  * 否则，还是应该优先使用synchronized
