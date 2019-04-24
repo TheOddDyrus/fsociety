@@ -17,7 +17,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
- * Redis实现的分布式锁
+ * Redis实现的分布式锁(这个案例为演示版)，正常实战版如下：
+ *   V1版本：没有操作，在分布式系统中会造成同一时间，资源浪费而且很容易出现并发问题
+ *   V2版本：加了分布式redis锁，在访问核心方法前，加入redis锁可以阻塞其他线程访问,可以很好的处理并发问题,但是缺陷就是如果机器突然宕机，或者线路波动等，就会造成死锁，一直不释放等问题
+ *   V3版本：很好的解决了这个问题v2的问题，就是加入时间对比如果当前时间已经大与释放锁的时间说明已经可以释放这个锁重新在获取锁，setget方法可以把之前的锁去掉在重新获取,旧值在于之前的值比较，
+ *          如果无变化说明这个期间没有人获取或者操作这个redis锁，则可以重新获取
+ *   V4版本：采用成熟的框架redisson,封装好的方法则可以直接处理，但是waittime记住要这只为0
  */
 public class RedisDistributedLock {
 
@@ -34,7 +39,6 @@ public class RedisDistributedLock {
 
     /**
      * 加锁
-     *
      * @param locaName       锁的key
      * @param acquireTimeout 获取超时时间（毫秒）
      * @param lockExpire     锁的超时时间（秒）
@@ -67,7 +71,6 @@ public class RedisDistributedLock {
 
     /**
      * 释放锁
-     *
      * @param lockName   锁的key
      * @param identifier 释放锁的标识
      */
