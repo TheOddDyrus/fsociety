@@ -1,7 +1,7 @@
 package com.thomax.letsgo;
 
 /**
- * 请在此处对LetsGo进行测试！
+ * 请在此处对letsgo进行测试！
  * @author _thomas
  */
 public class CodeX {
