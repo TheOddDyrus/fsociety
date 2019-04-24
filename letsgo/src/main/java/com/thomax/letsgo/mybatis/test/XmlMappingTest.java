@@ -14,9 +14,7 @@ public class XmlMappingTest {
 	/**
 	 * 通过EmpMapper.xml映射Emp类，再将EmpMapper.xml配置到SqlMapConfig.xml文件中，通过SqlSession调用方法
 	 */
-
 	@Test
-	//测试查询
 	public void test01() {
 		SqlSession sqlSession = MyBatisUtils.getSqlSession();
 		
@@ -39,8 +37,8 @@ public class XmlMappingTest {
 		}
 	}
 	
-	@Test
 	//模糊查询
+	@Test
 	public void test02() {
 		SqlSession sqlSession = MyBatisUtils.getSqlSession();
 		
@@ -59,8 +57,8 @@ public class XmlMappingTest {
 		}
 	}
 	
-	@Test
 	//测试新增
+	@Test
 	public void test03() {
 		SqlSession sqlSession = MyBatisUtils.getSqlSession(true);
 		Emp emp = new Emp(8000, "大卫", "CLERK", 7789, new Date(), 1000, 2000, 20);
@@ -68,8 +66,8 @@ public class XmlMappingTest {
 		//sqlSession.commit();  //如果getSqlSession的时候没有传入参数，可以在末尾commit
 	}
 	
-	@Test
 	//测试删除
+	@Test
 	public void test04() {
 		SqlSession sqlSession = MyBatisUtils.getSqlSession(true);
 		int empno = 8000;

@@ -12,9 +12,8 @@ public class MyAdvice {
 	 *	环绕通知(Around):在调用方法的前后，都会执行
 	 *	异常通知(After-Throwing):在方法调用出现异常时，执行
 	 *	后置通知(AfterReturning)：在调用方法之后，调用（出现异常不调用）
-	 *	
 	 */
-	
+
 	public void beforeX() {
 		System.out.println("前置通知(Before)");
 	}

@@ -13,7 +13,6 @@ public class NativeDaoTest {
 	/**
 	 * 原始的Dao测试，相当于将XmlMappingTest的代码放到Dao内
 	 */
-
 	private IEmpDao empDao;
 	
 	@Before
