@@ -73,9 +73,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 //import static com.atguigu.aaa.StaticClass.*; // 静态导入：导入一个类中所有的静态内容
-
 
 /**
  * <i>Lets go</i>
@@ -83,7 +81,6 @@ import java.util.stream.Collectors;
  * @author _thomas
  * @version 2.0
  */
-@SuppressWarnings("unused")
 public class LetsGo {
 	
     /*-------------------------------------------
@@ -116,13 +113,13 @@ public class LetsGo {
     ============================================*/
 	
 	/**
-	 * <i>Examples类的reverse方法</i>                           
+	 * <i>Examples类的reverse方法</i>
 	 * 开始执行！
 	 * @param arr from input int array
-	 * @return result               
+	 * @return result
 	 * @throws Exception
 	 * @see {@link Supplier#print2()}
-	 * @since 1.0                             
+	 * @since 1.0
 	 */
 	public static int[] reverse(int[] arr){
         int[] result = new int[arr.length];
