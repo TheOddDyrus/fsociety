@@ -18,7 +18,7 @@ public class ThreadHandling extends Thread {
      * 其中ThreadLocal.ThreadLocalMap属于同包下使用，这里案例无法识别到
      */
     private volatile String name; //线程名
-    private int            priority; //线程优先级
+    private int            priority; //线程优先级（1~10）,越小越容易被先调度执行
     private Thread         threadQ; //保留属性，暂时没被使用
     private long           eetop; //保留属性，暂时没被使用
     private boolean     single_step; //保留属性，暂时没被使用
