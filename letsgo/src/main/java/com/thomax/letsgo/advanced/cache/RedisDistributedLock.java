@@ -145,6 +145,7 @@ class SeckillServer {
 
     public static void main(String[] args) {
         ExecutorService executorService = Executors.newFixedThreadPool(150); //假设tomcat分配最大150个线程
+        ExecutorService monitorService = Executors.newSingleThreadExecutor(); //单例监听线程保证监听不会出问题
         SeckillServer seckillServer = new SeckillServer(500); //设置秒杀服务的初始值=500
         List<Future<Boolean>> list = Collections.synchronizedList(new LinkedList<>());
         CountDownLatch monitorLock = new CountDownLatch(1);
@@ -165,14 +166,15 @@ class SeckillServer {
                     }
                 }
                 if (list.size() == 0) {
-                    executorService.shutdownNow();
-                    seckillServer.lock.closeJedis();
                     System.out.println("++++++++++++++++监听结束，共耗时：" + (System.currentTimeMillis() - startTime) + "毫秒");
+                    executorService.shutdown();
+                    monitorService.shutdown();
+                    seckillServer.lock.closeJedis();
                     return;
                 }
             }
         });
-        thread.start();
+        monitorService.submit(thread);
 
         /*模拟秒杀服务，1000个用户任务*/
         for (int i = 0; i < 1000; i++) {
