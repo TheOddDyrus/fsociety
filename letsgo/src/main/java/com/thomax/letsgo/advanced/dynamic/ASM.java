@@ -23,7 +23,7 @@ public class ASM {
         MethodVisitor initVisitor = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         initVisitor.visitCode();
         initVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-        initVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "V()", false);
+        initVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "V()", false); //最后一个参数代表方法持有者是否是一个接口类型
         initVisitor.visitInsn(Opcodes.RETURN);
         initVisitor.visitMaxs(1, 1);
         initVisitor.visitEnd();
@@ -32,7 +32,7 @@ public class ASM {
         helloVisitor.visitCode();
         helloVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
         helloVisitor.visitLdcInsn("hello world!");
-        helloVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+        helloVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false); //最后一个参数代表方法持有者是否是一个接口类型
         helloVisitor.visitInsn(Opcodes.RETURN);
         helloVisitor.visitMaxs(1, 1);
         helloVisitor.visitEnd();
