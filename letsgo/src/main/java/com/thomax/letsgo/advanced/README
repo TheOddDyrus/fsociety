@@ -16,7 +16,7 @@ advanced 高级
   ├─dynamic 动态
      ├─ Reflect.java  反射
      ├─ ASM.java  字节码生成器
-     ├─ JDKProxy.java  JDK动态代理
+     ├─ DynamicProxy.java  动态代理
      └─ MethodHandling  方法句柄
   ├─jvm 虚拟机
      ├─ ClassLoaderTest.java.java  类加载测试

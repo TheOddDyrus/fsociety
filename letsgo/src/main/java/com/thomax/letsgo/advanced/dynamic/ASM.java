@@ -4,6 +4,7 @@ import org.springframework.asm.ClassWriter;
 import org.springframework.asm.MethodVisitor;
 import org.springframework.asm.Opcodes;
 
+import javax.swing.filechooser.FileSystemView;
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -15,40 +16,36 @@ import java.io.FileOutputStream;
  */
 public class ASM {
 
-    @Deprecated
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
+        String className = "com.thomax.letsgo.advanced.dynamic.Thomax";
         ClassWriter classWriter = new ClassWriter(0);
-        String className = "com/thomax/asm/HelloWorld";
-        classWriter.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC, className, null,
-                "java/lang/Object", null);
-        MethodVisitor initVisitor = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "<init>",
-                "()V", null, null);
+        classWriter.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, className, null, "java/lang/Object", null);
+        MethodVisitor initVisitor = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         initVisitor.visitCode();
         initVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-        initVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>",
-                "V()");
+        initVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "V()", false);
         initVisitor.visitInsn(Opcodes.RETURN);
         initVisitor.visitMaxs(1, 1);
         initVisitor.visitEnd();
 
-        MethodVisitor helloVisitor = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "sayHello",
-                "()V;", null, null);
+        MethodVisitor helloVisitor = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "sayHello", "()V;", null, null);
         helloVisitor.visitCode();
-        helloVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out",
-                "Ljava/io/PrintStream;");
+        helloVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
         helloVisitor.visitLdcInsn("hello world!");
-        helloVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",
-                "println", "(Ljava/lang/String;)V");
+        helloVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
         helloVisitor.visitInsn(Opcodes.RETURN);
         helloVisitor.visitMaxs(1, 1);
         helloVisitor.visitEnd();
 
         classWriter.visitEnd();
         byte[] code = classWriter.toByteArray();
-        File file = new File("D:\\HelloWorld.class");
+        String desktopPath = FileSystemView.getFileSystemView() .getHomeDirectory().getAbsolutePath(); //操作系统桌面路径
+        File file = new File(desktopPath + File.separator + "Thomax.class");
         FileOutputStream output = new FileOutputStream(file);
         output.write(code);
         output.close();
+        /*这里的逻辑是完全无任何依赖去创建class字节码，再将文件写到桌面，方便查看生成的内容。
+        如果这里继续扩展，在ASM框架内扩展到通过接口生成class字节码，然后可以通过接口动态调用class的方法（类似CGLib了）*/
     }
 
 }
