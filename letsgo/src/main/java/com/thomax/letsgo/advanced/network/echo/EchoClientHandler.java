@@ -33,7 +33,7 @@ public class EchoClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
     }
@@ -45,14 +45,14 @@ public class EchoClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
         try {
             Bootstrap b = new Bootstrap();
             b.group(group)
-                    .channel(NioSocketChannel.class) ////指定使用NIO的传输Channel（客户端）
-                    .remoteAddress(new InetSocketAddress(host, port))
-                    .handler(new ChannelInitializer<SocketChannel>() { //当建立一个连接和一个新的通道时，创建添加到EchoClientHandler实例到channel pipeline
-                        @Override
-                        public void initChannel(SocketChannel ch) {
-                            ch.pipeline().addLast(new EchoClientHandler());
-                        }
-                    });
+                .channel(NioSocketChannel.class) ////指定使用NIO的传输Channel（客户端）
+                .remoteAddress(new InetSocketAddress(host, port))
+                .handler(new ChannelInitializer<SocketChannel>() { //当建立一个连接和一个新的通道时，创建添加到EchoClientHandler实例到channel pipeline
+                    @Override
+                    public void initChannel(SocketChannel ch) {
+                        ch.pipeline().addLast(new EchoClientHandler());
+                    }
+                });
             ChannelFuture f = b.connect().sync();
             f.channel().closeFuture().sync();
         } finally {
