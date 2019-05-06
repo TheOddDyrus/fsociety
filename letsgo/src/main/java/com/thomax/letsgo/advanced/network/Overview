@@ -1,0 +1,30 @@
+BootStrap {
+    Netty应用程序通过设置bootstrap（引导）类的开始，该类提供了一个用于应用程序网络层配置的容器。
+}
+
+Channel {
+    底层网络传输API必须提供给应用I/O操作的接口，如读，写，连接，绑定等等。对于我们来说，这是结构几乎总是会成为一个“socket”。
+    Netty中的接口Channel定义了与socket丰富交互的操作集：bind, close, config, connect, isActive, isOpen, isWritable, read, write等等。
+    Netty提供大量的Channel实现来专门使用。这些包括AbstractChannel, AbstractNioByteChannel, AbstractNioChannel, EmbeddedChannel, LocalServerChannel，NioSocketChannel等等。
+}
+
+ChannelHandler {
+    支持很多协议，并且提供用于数据处理的容器。我们已经知道ChannelHandler由特定事件触发。ChannelHandler可专用于几乎所有的动作，
+    包括将一个对象转为字节（或相反），执行过程中抛出的异常处理。常用的一个接口是ChannelInboundHandler，这个类型接收到入站事件（包括接收到的数据）可以处理应用程序逻辑。
+    当你需要提供响应时，你也可以从ChannelInboundHandler冲刷数据。一句话，业务逻辑经常存活于一个或者多个ChannelInboundHandler。
+}
+
+ChannelPipeline {
+    提供了一个容器给ChannelHandler链并提供了一个API用于管理沿着链入站和出站事件的流动。每个Channel都有自己的ChannelPipeline，当Channel创建时自动创建的。
+    实现了ChannelHandler的抽象类ChannelInitializer的子类通过ServerBootstrap进行注册。当它的方法initChannel()被调用时，这个对象将安装自定义的ChannelHandler集到pipeline。
+    当这个操作完成时，ChannelInitializer子类则从ChannelPipeline自动删除自身。
+}
+
+EventLoop {
+    用于处理Channel的I/O操作。一个单一的EventLoop通常会处理多个Channel事件。一个EventLoopGroup可以含有多于一个的EventLoop和提供了一种迭代用于检索清单中的下一个。
+}
+
+ChannelFuture {
+    Netty所有的I/O操作都是异步。因为一个操作可能无法立即返回，我们需要有一种方法在以后确定它的结果。出于这个目的，Netty提供了接口ChannelFuture，
+    它的addListener方法注册了一个ChannelFutureListener，当操作完成时，可以被通知（不管成功与否）。
+}

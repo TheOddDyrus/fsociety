@@ -1,4 +1,4 @@
-package com.thomax.letsgo.advanced.network.echo;
+package com.thomax.letsgo.advanced.network;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;

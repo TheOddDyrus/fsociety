@@ -21,6 +21,10 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
+/**
+ * 利用Netty实现一个响应服务
+ * 在cmd: telnet localhost 1234连接以后，可以输入消息，会得到相应
+ */
 public class NettyTelnet {
     public static void main(String[] args) {
         NettyTelnetServer nettyTelnetServer = new NettyTelnetServer();
@@ -33,7 +37,7 @@ public class NettyTelnet {
 }
 
 class NettyTelnetServer {
-    private static final int PORT = 8666;
+    private static final int PORT = 1234;
     private EventLoopGroup bossGroup = new NioEventLoopGroup(1);
     private EventLoopGroup workerGroup = new NioEventLoopGroup();
 

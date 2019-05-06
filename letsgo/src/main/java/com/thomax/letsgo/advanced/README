@@ -26,6 +26,12 @@ advanced 高级
      └─ JVM  虚拟机分析
   ├─mq 中间件
      └─ MqAnalysis  各大中间件优劣势分析
+  ├─network 网络
+       ├─ EchoClientHandler.java  netty客户端
+       ├─ EchoServerHandler.java  netty服务端
+       ├─ NioServer.java  原生nio服务
+       ├─ NettyTelnet.java  netty案例演示
+       └─ Overview  netty结构总览
   ├─thread 多线程
      ├─ ThreadPoolHandling  线程池的操作
      ├─ ExecutorHandling.java  执行任务的操作
