@@ -25,8 +25,15 @@ public class ZookeeperDistributedLock implements Lock {
     private ZkClient zkClient = new ZkClient("127.0.0.1:2181");
     private String beforePath;
     private String currentPath;
-    private static String path = "path" + "/";
+    private static String path = "/";
     private CountDownLatch latch;
+
+    public static void main(String[] args) {
+        ZkClient zkClient = new ZkClient("200.200.200.55:2181");
+        List<String> children = zkClient.getChildren(path);
+        System.out.println(children);
+        zkClient.deleteRecursive("/tttt"); //删除节点
+    }
 
     @Override
     public void lock() {
