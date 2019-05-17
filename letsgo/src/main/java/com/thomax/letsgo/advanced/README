@@ -8,7 +8,7 @@ advanced 高级
      └─ CacheAnalysis  各大缓存优劣性分析
   ├─concurrent 并发
      ├─ LaunderThrowable.java  异常处理
-     ├─ AQSHandling.java  锁基于信号量的操作
+     ├─ AQSHandling.java  闭锁、信号量、栅栏
      ├─ ForkJoinHanding.java  并行操作
      ├─ FutureHandling.java  异步操作
      ├─ LockHanding.java.java  锁的基本操作
