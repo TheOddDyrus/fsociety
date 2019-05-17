@@ -136,7 +136,7 @@ class ReadWriteMap<K, V> {
  *
  * 同步类在实现时一般都将自定义同步器（Sync）定义为内部类，供自己使用；而同步类自己（Mutex）则实现某个接口，对外服务。当然，接口的实现要直接依赖Sync，它们在语义上也存在某种对应关系！！
  * 在Sync里只用实现资源state的获取-释放方式tryAcquire-tryRelelase，至于线程的排队、等待、唤醒等，上层的AQS都已经实现好了，我们不用关心。
- * 除了Mutex，ReentrantLock、CountDownLatch、emphore这些同步类的实现方式都差不多，不同的地方就在获取-释放资源的方式tryAcquire-tryRelelase
+ * 除了Mutex，ReentrantLock、CountDownLatch、emphore这些同步类的实现方式都差不多，不同的地方就在获取-释放资源的方式tryAcquire-tryRelease
  */
 class Mutex implements Lock, java.io.Serializable {
     private static class Sync extends AbstractQueuedSynchronizer { // 自定义同步器
