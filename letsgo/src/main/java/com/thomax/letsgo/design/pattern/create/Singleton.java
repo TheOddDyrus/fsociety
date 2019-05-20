@@ -40,15 +40,15 @@ public class Singleton {
 //懒汉模式
 class OddOne {
 	/*第一种通过限制DLC的方式获得*/
-	private volatile static OddOne oo = null; //DCL方式的缺陷需要利用volatile来限制JMM的指令重排序（oo的写操作不happen-before对它的读操作）
+	private volatile static OddOne oo = null; //DCL方式的缺陷需要利用volatile来限制JMM的指令重排序
 
 	private OddOne() {}
 	
 	public static OddOne getInstance() {
-		if (oo == null) {
+		if (oo == null) { //指令重排序会导致创建对象以1->3->2去执行判断不为null直接返回oo，但是这个oo还未被初始化
 			synchronized (OddOne.class) {
 				if (oo == null) {
-					oo = new OddOne();
+					oo = new OddOne(); //这段代码其实是分为三步执行：1.为oo分配内存空间 -> 2.初始化oo -> 3.将oo指向分配的内存地址
 				}
 			}
 		}
