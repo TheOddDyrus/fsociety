@@ -151,8 +151,8 @@ class SeckillServer {
         CountDownLatch monitorLock = new CountDownLatch(1);
         long startTime = System.currentTimeMillis();
 
-        /*创建一个线程准备去监听异步结果，如果秒杀结束则关闭秒杀业务*/
-        Thread thread = new Thread(() -> {
+        /*单线程去监听异步结果，如果秒杀结束则关闭秒杀业务*/
+        monitorService.submit(() -> {
             try {
                 monitorLock.await();
             } catch (InterruptedException e) {
@@ -174,7 +174,6 @@ class SeckillServer {
                 }
             }
         });
-        monitorService.submit(thread);
 
         /*模拟秒杀服务，1000个用户任务*/
         for (int i = 0; i < 1000; i++) {
