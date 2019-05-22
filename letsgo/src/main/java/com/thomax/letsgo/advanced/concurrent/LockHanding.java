@@ -35,6 +35,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * 综述：在synchronized无法满足需求的条件下，ReentrantLock可以作为一种高级工具，比如可定时、可轮询、可中断的锁获取操作、公平队列、非块结构的锁(非块比如方法和属性)。
  *      否则，还是应该优先使用synchronized，在JDK1.6及以后synchronized和ReentrantLock的性能基本完全持平，而且虚拟机在未来性能优化肯定会偏向于原生的synchronized。
+ *      相比synchronized，ReentrantLock增加了一些高级功能主要来说主要有三点：
+ *          ①等待可中断；
+ *          ②可实现公平锁；
+ *          ③可实现选择性通知
  */
 public class LockHanding implements Lock, ReadWriteLock {
     /**
