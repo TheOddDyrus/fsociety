@@ -1,5 +1,7 @@
 package com.thomax.letsgo.advanced.jvm;
 
+import java.lang.ref.WeakReference;
+
 /**
  * 内存回收四种引用判定：
  * 1.强引用：类似Object obj = new Object(); 只要obj存在对象永远不会被回收
@@ -12,6 +14,22 @@ public class MemoryRecoveryTest {
         SoltRecovery example = new SoltRecovery();
         example.test();
     }
+}
+
+/**
+ * 使用引用的例子
+ */
+class ReferenceExample<T> extends WeakReference {
+    public ReferenceExample(T t) {
+        super(t); //第一种：将T设为软引用（ThreadLocalMap中的Entry实例化的时候也是这样操作）
+    }
+
+    /*第二种：直接创建WeakReference对象来get软引用对象*/
+    public void test() {
+        WeakReference<Hello> helloHandle = new WeakReference<>(new Hello());
+        Hello hello = helloHandle.get();
+    }
+    private class Hello {}
 }
 
 /**

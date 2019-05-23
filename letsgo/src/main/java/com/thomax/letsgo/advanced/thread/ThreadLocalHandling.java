@@ -30,7 +30,7 @@ public class ThreadLocalHandling {
         return connectionHolder2.get();
     }
 
-    //ThreadLocalMap中Entry继承自WeakReference<ThreadLocal<?>，不要直接将connectionHolder设为null，这样线程没结束时无法有效的回收Entry（key不为null，value为null），使用remove会直接清理Entry
+    //ThreadLocalMap中Entry继承自WeakReference<ThreadLocal<?>，不要直接将connectionHolder设为null，这样线程没结束时无法有效的回收Entry（key会被弱引用），使用remove会直接清理key为null的Entry
     public static void removeConnection() {
         connectionHolder.remove();
     }
