@@ -2,13 +2,14 @@ package com.thomax.example.service.impl;
 
 import com.thomax.example.dao.SyncOperationDao;
 import com.thomax.example.service.OperationService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
 
 @Service
 public class OperationServiceImpl implements OperationService {
 
-    @Autowired
+    @Resource
     private SyncOperationDao syncOperationDao;
 
     @Override

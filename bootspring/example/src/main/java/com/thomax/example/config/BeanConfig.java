@@ -1,11 +1,11 @@
 package com.thomax.example.config;
 
-import com.thomax.example.service.AA;
+import com.thomax.example.service.impl.AAImpl;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.context.annotation.Bean;
 
 @SpringBootConfiguration
-public class SysConfig {
+public class BeanConfig {
 
     @Bean(name = "tt")
     public Object createBean() {
@@ -13,13 +13,5 @@ public class SysConfig {
         return new AAImpl();
     }
 
-}
-
-class AAImpl implements AA {
-
-    @Override
-    public String test() {
-        return "AA";
-    }
 }
 

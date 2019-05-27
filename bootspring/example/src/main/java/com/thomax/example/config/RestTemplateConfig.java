@@ -3,6 +3,7 @@ package com.thomax.example.config;
 import com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter4;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-@Configuration
+@SpringBootConfiguration
 @ConditionalOnClass(value = {RestTemplate.class, HttpClient.class})
 public class RestTemplateConfig {
 
@@ -26,7 +27,9 @@ public class RestTemplateConfig {
     private int connectTimeout = 2; //连接超时默认2s
     private int readTimeout = 30; //读取超时默认30s
 
-    //创建HTTP客户端工厂
+    /**
+     * 创建HTTP客户端工厂
+     */
     private ClientHttpRequestFactory createFactory() {
         if (this.maxTotalConnect <= 0) {
             SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -43,7 +46,9 @@ public class RestTemplateConfig {
         return factory;
     }
 
-    //初始化RestTemplate,并加入spring的Bean工厂，由spring统一管理
+    /**
+     * 初始化RestTemplate,并加入spring的Bean工厂，由spring统一管理
+     */
     @Bean
     @ConditionalOnMissingBean(RestTemplate.class)
     public RestTemplate getRestTemplate() {

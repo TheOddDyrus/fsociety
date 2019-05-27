@@ -1,5 +1,6 @@
 package com.thomax.example.controller;
 
+import com.thomax.example.component.WebSocketServer;
 import com.thomax.example.service.AA;
 import com.thomax.example.service.OperationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ public class TestRestController {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
+    @Autowired
+    private WebSocketServer webSocketServer;
+
     @RequestMapping("/mybatis")
     public Object testMybatis() {
         return operationService.getTotal();
@@ -39,6 +43,11 @@ public class TestRestController {
     @RequestMapping("/exception")
     public Object testException() {
         throw new ArithmeticException("custom exception by __thomax");
+    }
+
+    @RequestMapping("/websocket")
+    public void testWebsocket(String message) {
+        webSocketServer.onMessage(message);
     }
 
 }

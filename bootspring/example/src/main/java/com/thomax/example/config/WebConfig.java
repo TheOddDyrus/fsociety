@@ -10,8 +10,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
 
     /**
      * 添加拦截器
-     *
-     * @param registry
      */
     @Override
     protected void addInterceptors(InterceptorRegistry registry) {
