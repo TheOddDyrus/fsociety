@@ -2,35 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <title>Title</title>
-    <script>
+    <title>websocket测试</title>
+    <script src="./js/jquery-1.11.3.min.js" type="text/javascript">
         var socket;
-        if (typeof (WebSocket) == "undefined") {
-            alert("此浏览器不支持WebSocket");
-        } else {
-            console.log("您的浏览器支持WebSocket");
-            socket = new WebSocket("ws://localhost:8080/websocket");
+        if('WebSocket' in window){
+            socket = new WebSocket("ws://localhost:8080/webSocketServer");
             //打开事件
             socket.onopen = function () {
-                console.log("Socket 已打开");
+                alert("Socket已打开");
             };
             //获得消息事件
             socket.onmessage = function (msg) {
-                console.log(msg.data);
+                $("#operationData").set(msg.data);
             };
             //关闭事件
             socket.onclose = function () {
-                console.log("Socket已关闭");
+                alert("Socket已关闭");
             };
             //发生了错误事件
             socket.onerror = function () {
                 alert("Socket发生了错误，请刷新页面");
             }
+        }else{
+            alert('该浏览器不支持websocket');
+        }
+
+        function submit() {
+            debugger;
+            $.ajax({
+                type : 'POST',
+                url : "./receiveMsg",
+                data: {
+                    "message": $("#write").val()
+                },
+                async : true
+            });
         }
     </script>
 </head>
 <body>
-<h1>Websocket测试</h1>
-
+<h1 class="data">websocket测试</h1>
+<div>
+    <input class="write" type="text">
+</div>
+<div>
+    <input type="button" value="提交" onclick="submit()">
+</div>
 </body>
 </html>

@@ -45,8 +45,8 @@ public class TestRestController {
         throw new ArithmeticException("custom exception by __thomax");
     }
 
-    @RequestMapping("/websocket")
-    public void testWebsocket(String message) {
+    @RequestMapping("/receiveMsg")
+    public void testReceiveMsg(String message) {
         webSocketServer.onMessage(message);
     }
 

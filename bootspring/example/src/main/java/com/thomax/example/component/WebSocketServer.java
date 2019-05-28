@@ -13,7 +13,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-@ServerEndpoint("/websocket")
+@ServerEndpoint("/webSocketServer")
 @Component
 public class WebSocketServer {
 

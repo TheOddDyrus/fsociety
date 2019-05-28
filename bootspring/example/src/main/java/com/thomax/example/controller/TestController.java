@@ -14,6 +14,11 @@ public class TestController {
         return "index";
     }
 
+    @RequestMapping("/websocket")
+    public String testWebsocket() {
+        return "websocket";
+    }
+
 }
 
 

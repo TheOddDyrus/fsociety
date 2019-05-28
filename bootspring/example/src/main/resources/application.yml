@@ -32,6 +32,8 @@ spring:
       #suffix: .jsp
   thymeleaf:
     prefix: classpath:/static/
+  resources:
+    static-locations: classpath:
   #dubbo:
     #application:
       #name: test-thomax
