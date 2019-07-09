@@ -77,12 +77,6 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>com.thomax</groupId>
-            <artifactId>letsgo</artifactId>
-            <version>7777</version>
-        </dependency>
     </dependencies>
 
 </project>

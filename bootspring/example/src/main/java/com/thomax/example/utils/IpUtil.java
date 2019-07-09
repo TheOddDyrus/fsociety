@@ -1,6 +1,6 @@
 package com.thomax.example.utils;
 
-import com.thomax.letsgo.utils.StringUtil;
+import io.netty.util.internal.StringUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
@@ -51,27 +51,27 @@ public class IpUtil {
     public static String getNginxProxyIpAddr(HttpServletRequest request) {
         String ip = request.getHeader("real-ip"); //这个real-ip是通过nginx设置的保存了ip地址的字段
 
-        if (StringUtil.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+        if (StringUtil.isNullOrEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("x-forwarded-for");
         }
 
-        if (StringUtil.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+        if (StringUtil.isNullOrEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("Proxy-Client-IP");
         }
 
-        if (StringUtil.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+        if (StringUtil.isNullOrEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("WL-Proxy-Client-IP");
         }
 
-        if (StringUtil.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+        if (StringUtil.isNullOrEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("HTTP_CLIENT_IP");
         }
 
-        if (StringUtil.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+        if (StringUtil.isNullOrEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("HTTP_X_FORWARDED_FOR");
         }
 
-        if (StringUtil.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+        if (StringUtil.isNullOrEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
         }
 
