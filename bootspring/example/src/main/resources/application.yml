@@ -26,14 +26,17 @@ spring:
           max-wait: 1000
       #cluster:
       #nodes: 集群
-  #mvc:
+  mvc:
+    static-path-pattern: /static/**
     #view:
       #prefix: /xxx/
       #suffix: .jsp
   thymeleaf:
-    prefix: classpath:/static/
-  resources:
-    static-locations: classpath:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false
   #dubbo:
     #application:
       #name: test-thomax
