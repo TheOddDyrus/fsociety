@@ -83,7 +83,7 @@ public class PerformanceTest {
                         headers.setContentType(MediaType.valueOf("application/json;UTF-8"));
                         HttpEntity<String> httpEntity = new HttpEntity<>(json, headers);
                         ResponseEntity<String> responseEntity = restTemplate.postForEntity("http://localhost:8700/test", httpEntity, String.class);
-                        LOGGER.info("线程：{}，返回状态：{}，状态代码:{}，返回值：{},id:{},返回内容:{}", Thread.currentThread().getName(),
+                        LOGGER.info("线程：{}，返回状态：{}，状态代码:{}，返回值：{},id:{}", Thread.currentThread().getName(),
                                                                                                     responseEntity.getStatusCode(),
                                                                                                     responseEntity.getStatusCodeValue(),
                                                                                                     responseEntity.getBody(),

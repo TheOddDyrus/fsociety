@@ -63,8 +63,8 @@ public class ThreadHandling extends Thread {
     public void interrupt() { interrupt(); } //使线程中断，并且不会中断一个正在运行的线程；如果此线程是阻塞状态，则会抛出一个异常（可以中断阻塞状态）
     public boolean isInterrupted() { return isInterrupted(); } //调用Thread类中的native方法isInterrupted(false)，返回线程的中断状态
     public static boolean interruptedExample() { return interrupted(); } //调用Thread类中的native方法isInterrupted(true)，返回线程的中断状态并且清空线程的中断状态
-    public void stop1() { stop(); } //此方法会直接终止run()方法的调用，并且会抛出一个ThreadDeath错误，如果线程持有某个对象锁的话，会完全释放锁，导致对象状态不一致（已废弃）
-    public void destory1() { destroy(); } //已废弃，直接会出异常
+    //public void stop() { stop(); } //此方法会直接终止run()方法的调用，并且会抛出一个ThreadDeath错误，如果线程持有某个对象锁的话，会完全释放锁，导致对象状态不一致（已废弃）
+    //public void destory() { destroy(); } //已废弃，直接会出异常
     public long getId() { return super.getId(); } //获得线程id
     public void modifyName() {
         super.setName("new name:" + super.getName()); //get set name
