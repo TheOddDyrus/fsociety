@@ -2,7 +2,7 @@ package com.thomax.letsgo;
 
 /**
  * 请在此处对letsgo进行测试！
- * @author _thomas
+ * @author thomax
  */
 public class CodeX {
 
