@@ -10,9 +10,9 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @EnableEurekaClient
 @EnableDiscoveryClient
 @EnableFeignClients
-public class BootStrap {
+public class Feign {
 
     public static void main(String[] args) {
-        SpringApplication.run( BootStrap.class, args );
+        SpringApplication.run( Feign.class, args );
     }
 }

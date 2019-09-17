@@ -6,10 +6,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @MapperScan("com.thomax.example.dao")
-public class BootStrap {
+public class Example {
 
     public static void main(String[] args) {
-        SpringApplication.run(BootStrap.class, args);
+        SpringApplication.run(Example.class, args);
     }
 
 }

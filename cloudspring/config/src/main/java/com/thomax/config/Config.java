@@ -6,7 +6,7 @@ import org.springframework.cloud.config.server.EnableConfigServer;
 
 @SpringBootApplication
 @EnableConfigServer
-public class BootStrap {
+public class Config {
 
     /**
      * http请求地址和资源文件映射如下:  http://localhost:8888/thomax-provider/dev
@@ -17,7 +17,7 @@ public class BootStrap {
      * /{label}/{application}-{profile}.properties
      */
     public static void main(String[] args) {
-        SpringApplication.run(BootStrap.class, args);
+        SpringApplication.run(Config.class, args);
     }
 
 }
