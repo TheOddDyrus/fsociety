@@ -15,7 +15,7 @@ public class Test {
 
     @RequestMapping("/test")
     public Object test() {
-        return 123;
+        return "This project runs successfully!";
     }
 
 }
