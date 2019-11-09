@@ -106,8 +106,6 @@ class CustomClassLoader {
      *  7.否则，类查找失败
      *     => 上面顺序中只有1.和2.仍然符合双亲委派规则，其余的都是在平级的类加载器中进行的
      */
-
-
     public void test() {
         Object obj = null;
         try {
@@ -118,4 +116,5 @@ class CustomClassLoader {
         System.out.println(obj); //输出结果：class com.thomax.letsgo.advanced.jvm.SubClass
         System.out.println(obj instanceof com.thomax.letsgo.advanced.jvm.SubClass); //输出结果：false （不同的类加载器无法使用instanceof判断所属关系）
     }
+
 }
