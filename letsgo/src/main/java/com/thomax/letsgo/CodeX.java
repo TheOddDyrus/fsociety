@@ -1,7 +1,8 @@
 package com.thomax.letsgo;
 
 /**
- * 请在此处对letsgo进行测试！
+ * Good luck have fun!!
+ *
  * @author thomax
  */
 public class CodeX {

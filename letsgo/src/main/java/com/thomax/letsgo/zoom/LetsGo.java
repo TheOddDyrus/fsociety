@@ -1,4 +1,4 @@
-package com.thomax.letsgo;
+package com.thomax.letsgo.zoom;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
