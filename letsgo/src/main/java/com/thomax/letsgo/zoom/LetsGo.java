@@ -607,6 +607,7 @@ class Animal {
 	}
     
     public void move() {
+    	//
     	intV = 10;
     	System.out.println("Animal.move: " + intV);
     }
