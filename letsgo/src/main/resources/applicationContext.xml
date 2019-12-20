@@ -15,13 +15,13 @@
 		destroy-method:代表javabean生命周期结束时的方法.-->
 
 	<!-- IoC：使用空构造方法创建单例对象 -->
-	<bean name="emp01" class="com.thomax.letsgo.spring.domain.Emp" scope="singleton"
-		init-method="init01" destroy-method="destroy01"/>
+	<bean name="emp01" class="com.thomax.letsgo.zoom.spring.domain.Emp" scope="singleton"
+          init-method="init01" destroy-method="destroy01"/>
 		
 	<!-- IoC：使用静态工厂方法创建对象 -->
-	<bean name="emp02" class="com.thomax.letsgo.spring.factory.EmpFactory" factory-method="getInstance"/>
+	<bean name="emp02" class="com.thomax.letsgo.zoom.spring.factory.EmpFactory" factory-method="getInstance"/>
 	
 	<!-- IoC：使用对象工厂方法创建对象 -->
-	<bean name="factory01" class="com.thomax.letsgo.spring.factory.EmpFactory"/>
+	<bean name="factory01" class="com.thomax.letsgo.zoom.spring.factory.EmpFactory"/>
 	<bean name="emp03" factory-bean="factory01" factory-method="getEmp"/>
 </beans>

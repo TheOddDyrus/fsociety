@@ -18,13 +18,13 @@
 	-->
 	
 	<!-- 配置目标对象 -->
-	<bean name="customDao" class="com.thomax.letsgo.spring.dao.impl.CustomDao"/>
+	<bean name="customDao" class="com.thomax.letsgo.zoom.spring.dao.impl.CustomDao"/>
 	<!-- 配置通知 -->
-	<bean name="myAdvice" class="com.thomax.letsgo.spring.proxy.MyAdvice"/>
+	<bean name="myAdvice" class="com.thomax.letsgo.zoom.spring.proxy.MyAdvice"/>
 	<!-- AOP -->
 	<aop:config>
 		<!-- 配置切入点 -->
-		<aop:pointcut expression="execution(* com.thomax.letsgo.spring.dao.impl.*Dao.*(..))" id="pointCut1"/>
+		<aop:pointcut expression="execution(* com.thomax.letsgo.zoom.spring.dao.impl.*Dao.*(..))" id="pointCut1"/>
 		<!-- 配置切面 -->
 		<aop:aspect ref="myAdvice">
 			<aop:before method="beforeX" pointcut-ref="pointCut1"/>

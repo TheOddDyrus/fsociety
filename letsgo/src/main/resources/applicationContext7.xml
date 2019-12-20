@@ -21,7 +21,7 @@
 	PROPAGATION_NESTED 如果当前事务存在，则嵌套事务执行 -->
 	
 	<!-- 扫描装载Dao与Service -->
-	<context:component-scan base-package="com.thomax.letsgo.spring"/>
+	<context:component-scan base-package="com.thomax.letsgo.zoom.spring"/>
 	
 	<!-- 配置事务管理器(使用applicationContext6.xml中的dataSourceX) 
 		 DataSourceTransactionManager作用于JDBC 或MyBatis，作用于Hihbernate的叫：HibernateTransactionManager -->
@@ -40,7 +40,7 @@
 	</tx:advice>
 	<!-- AOP使用事务管理器 -->
 	<aop:config>
-		<aop:pointcut expression="execution(* com.thomax.letsgo.spring.service.impl.*Service*.*(..))" id="pointCutX"/>
+		<aop:pointcut expression="execution(* com.thomax.letsgo.zoom.spring.service.impl.*Service*.*(..))" id="pointCutX"/>
 		<aop:advisor advice-ref="myAdviceX" pointcut-ref="pointCutX"/>
 	</aop:config>
 </beans>

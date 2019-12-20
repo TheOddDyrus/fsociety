@@ -8,7 +8,7 @@
 		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.2.xsd ">
 	
 	<!-- 扫描装载Dao与Service -->
-	<context:component-scan base-package="com.thomax.letsgo.spring"/>
+	<context:component-scan base-package="com.thomax.letsgo.zoom.spring"/>
 	
 	<!-- 获得配置文件 -->
 	<context:property-placeholder location="classpath:db.properties"/>
@@ -25,7 +25,7 @@
 	</bean>
 	
 	<!-- 配置DataSource到Dao内 -->
-	<bean name="empDao3" class="com.thomax.letsgo.spring.dao.impl.EmpDao3">
+	<bean name="empDao3" class="com.thomax.letsgo.zoom.spring.dao.impl.EmpDao3">
 		<property name="dataSource" ref="dataSourceX"/>
 	</bean>
 </beans>

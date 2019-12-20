@@ -6,9 +6,9 @@
 http://www.springframework.org/schema/beans ">
 
 	<!-- Dao中直接写@Resource(name="empDao")获得 -->
-	<bean name="empDao" class="com.thomax.letsgo.spring.dao.impl.EmpDao"/>
+	<bean name="empDao" class="com.thomax.letsgo.zoom.spring.dao.impl.EmpDao"/>
 	<!-- 将Dao注入Service中，中直接写@Resource(name="empService")获得 -->
-	<bean name="empService" class="com.thomax.letsgo.spring.service.impl.EmpService">
+	<bean name="empService" class="com.thomax.letsgo.zoom.spring.service.impl.EmpService">
 		<property name="empDao" ref="empDao"/>
 	</bean>
 	<bean></bean>
