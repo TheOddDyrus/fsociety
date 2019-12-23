@@ -24,7 +24,7 @@ public class ThreadPoolHandling extends ThreadPoolExecutor {
                               BlockingQueue<Runnable> workQueue, //线程池队列
                               ThreadFactory threadFactory, //线程工厂
                               RejectedExecutionHandler handler /*拒绝策略（Policy）：
-                                                                   1.中止（Abort）：该策略是线程池的默认策略。如果队列满了丢掉这个任务并且抛出RejectedExecutionException异常
+                                                                   1.中止（Abort）：该策略是线程池的默认策略。如果队列满了丢掉这个任务并且抛出RejectedExecution异常
                                                                    2.调用者运行（CallerRuns）：如果添加任务到队列失败，那么主线程会自己去执行该任务，不会等待线程池中的线程去执行
                                                                    3.抛弃（Discard）：如果队列满了，会直接丢掉这个任务并且不会有任何异常
                                                                    4.抛弃最旧的（Discard-Oldest）：如果队列满了，会将最早进入队列的任务删掉腾出空间，再尝试加入队列
