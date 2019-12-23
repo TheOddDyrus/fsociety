@@ -8,17 +8,17 @@ public class DependenceInversion {
 
 	public static void main(String[] args) {
 		//加载了自动驾驶技术的宝马车
-		AutoSystem asBmw = new AutoSystem((ICar)new BmwCar());
+		AutoSystem asBmw = new AutoSystem(new BmwCar());
 		asBmw.RunCar();
 		asBmw.TurnCar();
 		asBmw.StopCar();
 		//加载了自动驾驶技术的福特车
-		AutoSystem asFord = new AutoSystem((ICar)new FordCar());
+		AutoSystem asFord = new AutoSystem(new FordCar());
 		asFord.RunCar();
 		asFord.TurnCar();
 		asFord.StopCar();
 		//加载了自动驾驶技术的本田车
-		AutoSystem asHonda= new AutoSystem((ICar)new HondaCar());
+		AutoSystem asHonda= new AutoSystem(new HondaCar());
 		asHonda.RunCar();
 		asHonda.TurnCar();
 		asHonda.StopCar();
