@@ -1,5 +1,7 @@
 package com.thomax.letsgo.advanced.concurrent;
 
+import com.thomax.letsgo.advanced.concurrent.CellularAutomata.BoardImpl;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -7,15 +9,70 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
-public class AQSHandling { }
+/**
+ * AQS方法详解：
+ * 1.它定义两种资源共享方式：Exclusive（独占，只有一个线程能执行，如ReentrantLock）和Share（共享，多个线程可同时执行，如Semaphore、CountDownLatch）
+ * 2.以ReentrantLock为例，state初始化为0，表示未锁定状态。A线程lock()时，会调用tryAcquire()独占该锁并将state+1。此后，其他线程再tryAcquire()时就会失败，
+ *   直到A线程unlock()到state=0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A线程自己是可以重复获取此锁的（state会累加），这就是可重入的概念。
+ *   但要注意，获取多少次就要释放多么次，这样才能保证state是能回到零态的。
+ * 3.再以CountDownLatch以例，任务分为N个子线程去执行，state也初始化为N（注意N要与线程个数一致）。这N个子线程是并行执行的，每个子线程执行完后countDown()一次，
+ *   state会CAS减1。等到所有子线程都执行完后(即state=0)，会unpark()主调用线程，然后主调用线程就会从await()函数返回，继续后余动作。
+ *
+ * 一般来说，自定义同步器要么是独占方法，要么是共享方式，他们也只需实现tryAcquire-tryRelease、tryAcquireShared-tryReleaseShared中的一种即可。
+ * 但AQS也支持自定义同步器同时实现独占和共享两种方式，如ReentrantReadWriteLock
+ */
+public class AQSHandling extends AbstractQueuedSynchronizer {
+
+    /*AQS中获取操作和释放操作的标准形式：
+    public final void acquire(int arg) {
+        while (当前状态不允许获取操作) {
+            if (需要阻塞) {
+                如果当前线程不在队列中，将其插入队列
+                阻塞当前队列
+            } else {
+                返回失败
+            }
+        }
+        根据独占方式/共享方式来更新同步器的状态
+        如果线程位于队列中，则将其移出队列
+        返回成功
+    }
+    public final boolean release(int arg) {
+        更新同步器的状态
+        if (新的状态允许被某个被阻塞的线程获取成功) {
+            解除队列中一个或多个线程的阻塞状态
+        }
+    }
+    */
+
+    public static void main(String[] args) throws InterruptedException {
+        CountDownLatchHandling countDownLatchHandling = new CountDownLatchHandling();
+        countDownLatchHandling.timeTasks(10, System.out::println); //闭锁实现10个线程同时打印
+
+        SemaphoreHandling<Integer> objectSemaphoreHandling = new SemaphoreHandling<>(10);
+        for (int i = 0; i <= 10; i++) {
+            objectSemaphoreHandling.add(i); //信号量实现遍历过程的第11个值的添加将阻塞
+
+            if (i == 10) {
+                objectSemaphoreHandling.remove(0);
+                objectSemaphoreHandling.add(i); //第11个值添加成功
+            }
+        }
+
+        CellularAutomata cellularAutomata = new CellularAutomata(new BoardImpl());
+        cellularAutomata.start(); //栅栏实现反复计算
+    }
+
+}
 
 /**
  *  CountDownLatch是一种灵活的闭锁实现，但是只能使用一次，基于AQS
  */
 class CountDownLatchHandling {
 
-    public long timeTasks(int nThreads, final Runnable task) throws InterruptedException {
+    public void timeTasks(int nThreads, final Runnable task) throws InterruptedException {
         final CountDownLatch startGate = new CountDownLatch(1);
         final CountDownLatch endGate = new CountDownLatch(nThreads);
 
@@ -38,8 +95,7 @@ class CountDownLatchHandling {
         long start = System.nanoTime();
         startGate.countDown(); //放开nThreads个线程的阻塞
         endGate.await(); //直到nThreads个线程的finally执行完，闭锁的计数清0以后才会停止阻塞
-        long end = System.nanoTime();
-        return end - start;
+        System.out.println("耗时：" + (System.nanoTime() - start) + "纳秒！");
     }
 }
 
@@ -120,8 +176,7 @@ class CellularAutomata {
         }
 
         private int computeValue(int x, int y) {
-            // Compute the new value that goes in (x,y)
-            return 0;
+            return x + y; // Compute the new value that goes in (x,y)
         }
     }
 
@@ -135,12 +190,41 @@ class CellularAutomata {
     interface Board {
         int getMaxX();
         int getMaxY();
-        int setNewValue(int x, int y, int value);
+        void setNewValue(int x, int y, int value);
         void commitNewValues();
         boolean hasConverged();
         void waitForConvergence();
         Board getSubBoard(int numPartitions, int index);
     }
+
+    public static class BoardImpl implements Board{
+        @Override
+        public int getMaxX() {
+            return 0;
+        }
+        @Override
+        public int getMaxY() {
+            return 0;
+        }
+        @Override
+        public void setNewValue(int x, int y, int value) {
+        }
+        @Override
+        public void commitNewValues() {
+        }
+        @Override
+        public boolean hasConverged() {
+            return false;
+        }
+        @Override
+        public void waitForConvergence() {
+        }
+        @Override
+        public Board getSubBoard(int numPartitions, int index) {
+            return null;
+        }
+    }
+
 }
 
 

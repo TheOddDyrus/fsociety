@@ -1,6 +1,5 @@
 package com.thomax.letsgo.advanced.concurrent;
 
-import jdk.nashorn.internal.ir.annotations.Immutable;
 import org.junit.runner.notification.RunListener.ThreadSafe;
 
 import java.util.Collections;
@@ -13,13 +12,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.atomic.AtomicStampedReference;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -41,6 +34,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *          ③可实现选择性通知
  */
 public class LockHanding implements Lock, ReadWriteLock {
+
     /**
      * Lock接口
      */
@@ -60,6 +54,7 @@ public class LockHanding implements Lock, ReadWriteLock {
             public void signalAll() { } //代替Object.notifyAll()，唤醒所有等待在Condition上的线程，能够从await()等方法返回的线程必须先获得与Condition对象关联的锁
         };
     }
+
     /**
      * ReadWriteLock接口
      * 适用于频繁读取的数据结构。复杂性稍微会更高，但是可以实现多种操作：
@@ -68,41 +63,7 @@ public class LockHanding implements Lock, ReadWriteLock {
      */
     public Lock readLock() { return null; } //返回共享锁，即共享方式，进入条件：1.没有其他线程的写锁；2.没有写请求，或者有写请求但调用线程和持有锁的线程是同一个
     public Lock writeLock() { return null; } //返回排他锁，即独占方法，进入条件：1.没有其他线程的读锁；2.没有其他线程的写锁
-    /**
-     * AQS方法详解：
-     * 1.它定义两种资源共享方式：Exclusive（独占，只有一个线程能执行，如ReentrantLock）和Share（共享，多个线程可同时执行，如Semaphore、CountDownLatch）
-     * 2.以ReentrantLock为例，state初始化为0，表示未锁定状态。A线程lock()时，会调用tryAcquire()独占该锁并将state+1。此后，其他线程再tryAcquire()时就会失败，
-     *   直到A线程unlock()到state=0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A线程自己是可以重复获取此锁的（state会累加），这就是可重入的概念。
-     *   但要注意，获取多少次就要释放多么次，这样才能保证state是能回到零态的。
-     * 3.再以CountDownLatch以例，任务分为N个子线程去执行，state也初始化为N（注意N要与线程个数一致）。这N个子线程是并行执行的，每个子线程执行完后countDown()一次，
-     *   state会CAS减1。等到所有子线程都执行完后(即state=0)，会unpark()主调用线程，然后主调用线程就会从await()函数返回，继续后余动作。
-     *
-     * 一般来说，自定义同步器要么是独占方法，要么是共享方式，他们也只需实现tryAcquire-tryRelease、tryAcquireShared-tryReleaseShared中的一种即可。
-     * 但AQS也支持自定义同步器同时实现独占和共享两种方式，如ReentrantReadWriteLock
-     */
-    class AQS extends AbstractQueuedSynchronizer {
-        /*AQS中获取操作和释放操作的标准形式：
-        boolean acquire() throws InterruptedException {
-            while (当前状态不允许获取操作) {
-                if (需要阻塞) {
-                    如果当前线程不在队列中，将其插入队列
-                    阻塞当前队列
-                } else {
-                    返回失败
-                }
-            }
-            根据独占方式/共享方式来更新同步器的状态
-            如果线程位于队列中，则将其移出队列
-            返回成功
-        }
-        void release() {
-            更新同步器的状态
-            if (新的状态允许被某个被阻塞的线程获取成功) {
-                解除队列中一个或多个线程的阻塞状态
-            }
-        }
-        */
-    }
+
 }
 
 /**
@@ -312,180 +273,3 @@ class SynchronizedUtil<K, V> {
         return Collections.synchronizedList(list);
     }
 }
-
-/**
- * 线程安全性的委托：CAS.num是非线程安全的，它可以将线程安全的操作委托给AtomicLong
- * （常见原子操作：若没有则添加、若相等则移除、若相等则替换）
- */
-class CAS {
-    static AtomicLong atomicLong = new AtomicLong();
-    static long num = 0;
-    private ExecutorService threadPool = Executors.newFixedThreadPool(100);
-
-    public void exec() {
-        while (CAS.num < 1000) {
-            Runnable runnable = () -> {
-                long cas = CAS.atomicLong.get();
-                long num = CAS.num;
-                /*
-                一些逻辑操作，当整个线程的执行时间小于线程上下文切换时间时，CAS的操作效率高
-                 */
-                num++;
-                if (CAS.atomicLong.compareAndSet(cas, cas + 1)) {
-                    CAS.num = num;
-                }
-            };
-
-            threadPool.submit(runnable);
-        }
-    }
-
-    /**
-     * AtomicReference与AtomicStampedReference的使用
-     */
-    class ConcurrentStack<T> {
-        private class Node<E> {
-            public final E item;
-            public Node<E> nextNode;
-            public final AtomicReference<Node<E>> nextReference;
-            public volatile Node<E> next; //这个属性提供给AtomicReferenceFieldUpdater创建来减少每次创建Node对象的开销
-            public Node(E item) {
-                this.item = item;
-                this.nextReference = new AtomicReference<>(); //可以无视这个属性的初始化（追求案例简洁只用一个实体类Node）
-            }
-            public Node(E item, Node<E> nextNode) {
-                this.item = item;
-                this.nextReference = new AtomicReference<>(nextNode);
-            }
-        }
-        /**
-         * 非阻塞栈的简易实现
-         */
-        AtomicReference<Node<T>> top = new AtomicReference<>();
-        public void push(T item) {
-            Node<T> newHead = new Node<>(item);
-            Node<T> oldHead;
-            do {
-                oldHead = top.get();
-                newHead.nextNode = oldHead;
-            } while (!top.compareAndSet(oldHead, newHead));
-        }
-        public T pop() {
-            Node<T> oldHead;
-            Node<T> newHead;
-            do {
-                oldHead = top.get();
-                if (oldHead == null) {
-                    return null;
-                }
-                newHead = oldHead.nextNode;
-            } while (!top.compareAndSet(oldHead, newHead));
-
-            return oldHead.item;
-        }
-        /**
-         * 非阻塞链表的简易实现
-         */
-        private final Node<T> dummy = new Node<>(null, null);
-        private final AtomicReference<Node<T>> tail = new AtomicReference<>(dummy);
-        private AtomicReferenceFieldUpdater<Node, Node> nextUpdater = AtomicReferenceFieldUpdater.newUpdater(Node.class, //通过nextUpdater来更新next域可以减少频繁创建AtomicReference的开销
-                                                                                                            Node.class,  //在ConcurrentLinkedQueue中就是使用这种原子的域更新器
-                                                                                                            "next");
-        public boolean put(T item) {
-            Node<T> newNode = new Node<>(item, null);
-            while (true) {
-                Node<T> curTail = tail.get();
-                Node<T> tailNext = curTail.nextReference.get();
-                if (curTail == tail.get()) {
-                    if (tailNext != null) {
-                        tail.compareAndSet(curTail, tailNext);
-                    } else {
-                        if (curTail.nextReference.compareAndSet(null, newNode)) {
-                            tail.compareAndSet(curTail, newNode);
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        /**
-         * ABA问题：
-         *  现有一个用单向链表实现的堆栈，栈顶为A，这时线程T1已经知道A.next为B，然后希望用CAS将栈顶替换为B：
-         *      original: A -> B     want to: B
-         *  在T1执行head.compareAndSet(A,B)之前，线程T2介入，将A、B出栈，再push D、C、A，此时堆栈结构如下图，而对象B此时处于游离状态：
-         *      now: A -> C -> D
-         *  此时轮到线程T1执行CAS操作，检测发现栈顶仍为A，所以CAS成功，栈顶变为B，但实际上B.next为null，所以此时的情况变为：
-         *      now: B
-         *  其中堆栈中只有B一个元素，C和D组成的链表不再存在于堆栈中，平白无故就把C、D丢掉了。
-         *
-         *  ==>各种乐观锁的实现中通常都会使用AtomicStampedReference来避免并发操作带来的问题（如果并发操作的逻辑自己可控制不会出现ABA问题还是可以使用AtomicReference的，例如上面案例ConcurrentStack）
-         */
-        private final AtomicStampedReference<Node<T>> head = new AtomicStampedReference<>(dummy,0);
-        public void exec(T item) {
-            Node<T> newHead = new Node<>(item);
-            Node<T> reference;
-            do {
-                reference = head.get(new int[0]); //这个传入参数简直就是毫无作用，内部返回的和getReference()返回的一样
-                Node<T> reference2 = head.getReference(); //reference == reference2
-                /*一些ABA类型的操作*/
-            } while (!head.compareAndSet(reference, newHead, head.getStamp(), head.getStamp() + 1)); //通过Stamp版本来确保对于历史操作的正确性判断
-        }
-    }
-}
-
-/**
- * 使用final来实现一个不可变对象，属性声明或形参声明都可以
- */
-@Immutable
-class Point {
-    private final int x;
-    private int y;
-
-    public Point(int x, final int y) {
-        this.x = x;
-        this.y = y;
-    }
-    public int getX() {
-        return x;
-    }
-    public int getY() {
-        return y;
-    }
-}
-
-/**
- * volatile关键字的2个主要功能：
- * 1.屏蔽指令重排序（DLC）优化
- *   （指令重排序：指CPU采用了允许将多条指令不按程序规定的顺序分开发送给各个相应的电路单元处理，只有非依赖性指令之间才会重排，最终只要获得一致的结果即可。
- *                比如算数的多元运算可以重排；比如单例设计模式com.thomax.letsgo.design.pattern.create.Singleton中对象创建，当多线程访问时，
- *                如果不加volatile会出现new一个对象以后这个对象还未实例化完成但是对象!=null，致后面线程直接获得未实例化完成的对象）
- * 2.通过反汇编码中的lock可以看出锁了CPU的缓存行，利用缓存一致性协议让CPU多级缓存中的数据失效从而重新去内存里面加载数据
- *
- * =>发展：volatile是在synchronized性能低下的时候提出的。如今在JDK6的synchronized关键字的性能被大幅优化之后，更是几乎没有使用它的场景
- */
-class Volatile { }
-
-/**
- * Java内存模型的有序性：
- *   如果在本地线程内观察，所有操作都是有序的（Within-Thread As-If-Serial Semantics）
- *   如果在一个线程观察另外一个线程，所有操作都是无序的，比如 "指令重排序" 和 "工作内存与主内存同步延迟"
- *
- * happens-before先行发生原则：
- *   这个是Java内存模型中定义的两项操作之间的偏序关系，如果说操作A先行发生于操作B，其实就是说在发生操作B之前，操作A产生"影响"能被操作B观察到，
- *   "影响"包括修改了内存中共享的值、发送了消息、调用了方法等。
- */
-class Ordering { }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
