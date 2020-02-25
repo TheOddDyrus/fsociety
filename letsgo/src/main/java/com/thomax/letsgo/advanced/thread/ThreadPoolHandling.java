@@ -47,8 +47,8 @@ public class ThreadPoolHandling extends ThreadPoolExecutor {
     public ExecutorService getExecutorService4() {
         return Executors.newScheduledThreadPool(20); //固定容量的线程池，以延迟或定时的方式来执行线程，类似Timer（但是Timer只会创建一个线程，会出现任务计划频率被任务执行时间覆盖的问题）
     }
-    public ExecutorService getExecutorService5() { //JDK1.8中新增的，它不是ThreadPoolExecutor的扩展，它是新的线程池类ForkJoinPool的扩展，所以适合使用于很耗时的大型任务的分解执行中
-        return Executors.newWorkStealingPool(20); //不传参默认使用Runtime.getRuntime().availableProcessors()获得操作系统线程数
+    public ExecutorService getExecutorService5() { //JDK1.8中新增的，它不是ThreadPoolExecutor的扩展，基于工作窃取算法实现工作，适用于计算密集型的任务
+        return Executors.newWorkStealingPool(); //不传参默认使用Runtime.getRuntime().availableProcessors()获得操作系统可用线程数
     }
     /**
      * 一个可以记录创建了多少次线程的线程工厂
