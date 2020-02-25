@@ -8,7 +8,6 @@ advanced 高级
      ├─ RedisReadWriteLock.java  Redisson实现的分布式读写锁
      └─ CacheAnalysis  各大缓存优劣性分析
   ├─concurrent 并发
-     ├─ LaunderThrowable.java  异常处理
      ├─ AQSHandling.java  闭锁、信号量、栅栏
      ├─ ForkJoinHanding.java  并行操作
      ├─ FutureHandling.java  异步操作

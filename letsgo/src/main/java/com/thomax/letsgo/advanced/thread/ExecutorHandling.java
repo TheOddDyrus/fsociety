@@ -1,7 +1,5 @@
 package com.thomax.letsgo.advanced.thread;
 
-import com.thomax.letsgo.advanced.concurrent.LaunderThrowable;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -93,7 +91,7 @@ class DrawHtml {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt(); //future还没有值时抛出此异常，中断当前线程（即执行这个draw()方法的线程，不影响此线程后面的继续运行）
         } catch (ExecutionException e) {
-            throw LaunderThrowable.handle(e);
+            //异步任务执行过程中自己抛出的异常会被封装在ExecutionException中
         } catch (TimeoutException e) {
             this.failover(img); //超时后进行任务降级
             future.cancel(true); //取消超时任务
