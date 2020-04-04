@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://200.200.200.50:3306/db_sync?useUnicode=true&characterEncoding=utf-8
+    url: jdbc:mysql://10.8.16.76:3306/db_sync?useUnicode=true&characterEncoding=utf-8
     username: root
     password: 123456
     dbcp2:
@@ -52,6 +52,14 @@ mybatis:
   #type-aliases-package: com.thomax.example.model  #别名扫描
   #config-location: classpath:mybatis/SqlMapConfig.xml  #加载Mybatis核心配置文件
   #spring.datasource.type=com.jolbox.bonecp.BoneCPDataSource  #配置连接池，还需要在pom.xml中加入该连接池的依赖
+
+# Actuator Web REST 监控配置（在spring boot 2.0以后,actuator默认只开启了info和health两个端点,要想使用其他的端点需要如下配置）
+management:
+  endpoints:
+    web:
+      base-path: /actuator  # 访问根路径
+      exposure:
+        include: "*"
 
 logging:
   level:

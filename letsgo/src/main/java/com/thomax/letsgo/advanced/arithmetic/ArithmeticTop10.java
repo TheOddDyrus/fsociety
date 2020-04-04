@@ -11,44 +11,44 @@ public class ArithmeticTop10 {}
 class FastSort {
 
     /**
-     * @param a 需要排序的数组
-     * @param low 排序范围：开始时的下标
-     * @param high 排序范围：结束时的下标
+     * @param arr 需要排序的数组
+     * @param left 排序范围：开始时的下标
+     * @param right 排序范围：结束时的下标
      */
-    public static void sort(int[] a, int low, int high) {
-        int start = low;
-        int end = high;
-        int key = a[low];
-        int temp;
+    static void quickSort(int[] arr, int left, int right) {
+        int dp;
+        if (left < right) {
+            dp = partition(arr, left, right);
+            quickSort(arr, left, dp - 1);
+            quickSort(arr, dp + 1, right);
+        }
+    }
 
-        while (end > start) {
-            while (end > start && a[end] >= key) { //从后往前比较：如果没有比关键值小的，比较下一个，直到有比关键值小的交换位置，然后又从前往后比较
-                end--;
-                if (a[end] <= key) {
-                    temp = a[end];
-                    a[end] = a[start];
-                    a[start] = temp;
-                }
+    static int partition(int[] arr, int left, int right) {
+        int pivot = arr[left];
+        while (left < right) {
+            while (left < right && arr[right] >= pivot) {
+                right--;
             }
-            while (end > start && a[start] <= key) { //从前往后比较：如果没有比关键值大的，比较下一个，直到有比关键值大的交换位置
-                start++;
-                if (a[start] >= key) {
-                    temp = a[start];
-                    a[start] = a[end];
-                    a[end] = temp;
-                }
+            if (left < right) {
+                arr[left++] = arr[right];
+            }
+            while (left < right && arr[left] <= pivot) {
+                left++;
+            }
+            if (left < right) {
+                arr[right--] = arr[left];
             }
         }
-
-        if (start > low) sort(a, low, start - 1); //左边序列。第一个索引位置到关键值索引-1
-        if (end < high) sort(a, end + 1, high); //右边序列。从关键值索引+1到最后一个
+        arr[left] = pivot;
+        return left;
     }
 
     public static void main(String[] args) {
-        int[] a = {12, 20, 5, 16, 15, 1, 30, 45, 23, 9};
-        sort(a, 0, a.length - 1);
-        for (int i : a) {
-            System.out.println(i);
+        int[] arr = {12, 20, 5, 16, 15, 1, 30, 1, 45, 23, 9};
+        quickSort(arr, 0, arr.length - 1);
+        for (int i : arr) {
+            System.out.print(i + " ");
         }
     }
 
