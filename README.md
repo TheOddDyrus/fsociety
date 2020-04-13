@@ -50,19 +50,19 @@ The name `fsociety` refers to **'free society'**
                         └─ JVM  虚拟机分析
                     ├─mq 中间件
                         └─ MqAnalysis  各大中间件优劣势分析
-                        ├─network 网络
+                    ├─network 网络
                         ├─ EchoClientHandler.java  netty客户端
                         ├─ EchoServerHandler.java  netty服务端
                         ├─ NioServer.java  原生nio服务
                         ├─ NettyTelnet.java  netty案例演示
                         └─ Overview  netty结构总览
-                    ├─thread 多线程
+                    └─thread 多线程
                         ├─ ThreadPoolHandling  线程池的操作
                         ├─ ExecutorHandling.java  执行任务的操作
                         ├─ ThreadHandling.java  线程的操作
                         ├─ ThreadLocalHandling.java  线程封闭的操作
                         └─ ThreadPoolOptimize  线程池调优
-                ├─design 设计
+                └─design 设计
                     ├─pattern 模式
                         ├─behavior 行为型
                             ├─ ChainOfResponsibility.java  责任链模式
@@ -113,10 +113,10 @@ The name `fsociety` refers to **'free society'**
         t::::t          h:::h 
         t::::t          h:::h 
     tttttt::::ttttt     h::h hhhh           oooooooo        mmmmmm   mmmmmm       aaaaaaaaaaa     xxxxxx      xxxxxx
-    t:::::::::::::t     h::hh::::hhh      oo::::::::oo    mm::::::m m::::::mm     a::::::::::a     x::::x    x::::x
-    t:::::::::::::t     h::::::::::hh    o::::::::::::o  m::::::::mmm::::::::m    aaaaaaaa::::a     x::::x  x::::x
-    ttttt::::::tttt     h:::::hhh::::h   o::::oooo::::o  Summarize by  _thomas            a:::a      x::::xx::::x
-        t::::t          h::::h  h:::::h  o:::o    o:::o  Good luck have fun!!!      aaaaaa::::a       x::::::::x
+    t:::::::::::::t     h::hh::::hhh      oo::::::::oo    Summarize by thomax     a::::::::::a     x::::x    x::::x
+    t:::::::::::::t     h::::::::::hh    o::::::::::::o  Good luck have fun!!!    aaaaaaaa::::a     x::::x  x::::x
+    ttttt::::::tttt     h:::::hhh::::h   o::::oooo::::o  m:::::::::::::::::::m            a:::a      x::::xx::::x
+        t::::t          h::::h  h:::::h  o:::o    o:::o  m:::::::::::::::::::m      aaaaaa::::a       x::::::::x
         t::::t          h:::h    h::::h  o:::o    o:::o  m:::m   m:::m   m:::m    aa::::::::::a        x::::::x
         t::::t          h:::h    h::::h  o:::o    o:::o  m:::m   m:::m   m:::m   a::::aaa:::::a        x::::::x
         t::::t   ttttt  h:::h    h::::h  o:::o    o:::o  m:::m   m:::m   m:::m  a::::a   a::::a       x::::::::x
