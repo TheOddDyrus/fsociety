@@ -113,8 +113,8 @@ The name `fsociety` refers to **'free society'**
         t::::t          h:::h 
         t::::t          h:::h 
     tttttt::::ttttt     h::h hhhh           oooooooo        mmmmmm   mmmmmm       aaaaaaaaaaa     xxxxxx      xxxxxx
-    t:::::::::::::t     h::hh::::hhh      oo::::::::oo    Summarize by thomax     a::::::::::a     x::::x    x::::x
-    t:::::::::::::t     h::::::::::hh    o::::::::::::o  Good luck have fun!!!    aaaaaaaa::::a     x::::x  x::::x
+    t:::::::::::::t     h::hh::::hhh      oo::::::::oo    summarize by thomax     a::::::::::a     x::::x    x::::x
+    t:::::::::::::t     h::::::::::hh    o::::::::::::o  good luck have fun!!!    aaaaaaaa::::a     x::::x  x::::x
     ttttt::::::tttt     h:::::hhh::::h   o::::oooo::::o  m:::::::::::::::::::m            a:::a      x::::xx::::x
         t::::t          h::::h  h:::::h  o:::o    o:::o  m:::::::::::::::::::m      aaaaaa::::a       x::::::::x
         t::::t          h:::h    h::::h  o:::o    o:::o  m:::m   m:::m   m:::m    aa::::::::::a        x::::::x
