@@ -92,7 +92,7 @@ The name `fsociety` refers to **'free society'**
                             ├─ Flyweight.java  享元模式
                             ├─ Proxy.java  代理模式
                             └─ structure.png 7种结构型设计模式之间的关系
-                            └─ DesignPattern.png 23种设计模式之间的关系
+                        └─ designPattern.png 23种设计模式之间的关系
                     └─principle 原则
                         ├─ CompositeReuse.java  合成复用原则
                         ├─ Demeter.java  迪米特法则
