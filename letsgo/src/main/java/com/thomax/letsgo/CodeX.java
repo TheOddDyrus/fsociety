@@ -8,7 +8,7 @@ package com.thomax.letsgo;
 public class CodeX {
 
 	public static void main(String[] args) {
-		System.out.println(123);
+
 	}
 
 }
