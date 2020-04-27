@@ -186,6 +186,12 @@
             <groupId>org.apache.shiro</groupId>
             <artifactId>shiro-core</artifactId>
             <version>1.5.2</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-beanutils</artifactId>
+                    <groupId>commons-beanutils</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- lucene -->
         <dependency>
@@ -356,7 +362,7 @@
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
-            <version>3.11.6</version>
+            <version>3.9.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
