@@ -36,7 +36,7 @@ public class ForkJoinHanding {
     private static List<Long> createFibonacci(int size) {
         List<Long> list = new ArrayList<>(size);
         long total = 0;
-        long startTime;
+        long startTime = System.nanoTime();
         if (size == 1) {
             list.add(0L);
         } else if (size == 2) {
@@ -49,14 +49,12 @@ public class ForkJoinHanding {
                 list.add(list.get(i) + list.get(i + 1));
             }
         }
-        System.out.print("create fibonacci [ ");
-        startTime = System.nanoTime();
+        System.out.print("create fibonacci took " + (System.nanoTime() - startTime) + "ns" + "\n[ ");
         for (Long val : list) {
             System.out.print(val + " ");
             total += val;
         }
-        System.out.print("]\n" + "result:" + total);
-        System.out.println(" took " + (System.nanoTime() - startTime) + "ns");
+        System.out.println("] " + "result:" + total);
 
         return list;
     }
