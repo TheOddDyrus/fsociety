@@ -22,7 +22,7 @@ public class ForkJoinHanding {
         ForkJoinPool forkJoinPool = new ForkJoinPool();
         startTime = System.nanoTime();
         Future<Long> future = forkJoinPool.submit(fibonacciTask);
-        System.out.print("fork/join took " + (System.nanoTime() - startTime) + "ns");
+        System.out.print("fork/join task took " + (System.nanoTime() - startTime) + "ns");
         try {
             System.out.println(" result:" + future.get());
         } catch (Exception e) {
@@ -49,14 +49,14 @@ public class ForkJoinHanding {
                 list.add(list.get(i) + list.get(i + 1));
             }
         }
-        System.out.print("[");
+        System.out.print("create fibonacci [ ");
         startTime = System.nanoTime();
         for (Long val : list) {
             System.out.print(val + " ");
             total += val;
         }
-        System.out.print("]" + "result:" + total + "\n");
-        System.out.println("create fibonacci took " + (System.nanoTime() - startTime) + "ns");
+        System.out.print("]\n" + "result:" + total);
+        System.out.println(" took " + (System.nanoTime() - startTime) + "ns");
 
         return list;
     }
