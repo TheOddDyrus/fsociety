@@ -18,17 +18,13 @@ public class ForkJoinHanding {
 
     public static void main(String[] args) {
         long startTime;
-        long stopTime;
-        long singleThreadTimes;
-        FibonacciTask fibonacciTask = new FibonacciTask(createFibonacci(0, 1, 80));
+        FibonacciTask fibonacciTask = new FibonacciTask(createFibonacci(36));
         ForkJoinPool forkJoinPool = new ForkJoinPool();
-        startTime = System.currentTimeMillis();
+        startTime = System.nanoTime();
         Future<Long> future = forkJoinPool.submit(fibonacciTask);
-        stopTime = System.currentTimeMillis();
-        singleThreadTimes = (stopTime - startTime);
-        System.out.println(" fork / join search took " + singleThreadTimes + "ms");
+        System.out.print("fork/join took " + (System.nanoTime() - startTime) + "ns");
         try {
-            System.out.println("result:" + future.get());
+            System.out.println(" result:" + future.get());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -37,35 +33,30 @@ public class ForkJoinHanding {
     /**
      * 生成指定长度斐波那契数列
      */
-    private static List<Long> createFibonacci(long first, long secend, int size) {
-        List<Long> list = new ArrayList<>();
+    private static List<Long> createFibonacci(int size) {
+        List<Long> list = new ArrayList<>(size);
         long total = 0;
         long startTime;
-        long stopTime;
-        long singleThreadTimes;
         if (size == 1) {
-            list.add(first);
+            list.add(0L);
         } else if (size == 2) {
-            list.add(first);
-            list.add(secend);
+            list.add(0L);
+            list.add(1L);
         } else if (size > 2) {
-            list.add(first);
-            list.add(secend);
+            list.add(0L);
+            list.add(1L);
             for (int i = 0; i < size - 2; i++) {
                 list.add(list.get(i) + list.get(i + 1));
             }
         }
         System.out.print("[");
-        startTime = System.currentTimeMillis();
-        for (int i = 0; i < list.size(); i++) {
-            System.out.print(list.get(i) + " ");
-            total = list.get(i) + total;
+        startTime = System.nanoTime();
+        for (Long val : list) {
+            System.out.print(val + " ");
+            total += val;
         }
-        System.out.print("]" + "result:" + total);
-        stopTime = System.currentTimeMillis();
-        singleThreadTimes = (stopTime - startTime);
-        System.out.println();
-        System.out.println(" single thread search took " + singleThreadTimes + "ms");
+        System.out.print("]" + "result:" + total + "\n");
+        System.out.println("create fibonacci took " + (System.nanoTime() - startTime) + "ns");
 
         return list;
     }
@@ -78,12 +69,10 @@ public class ForkJoinHanding {
  */
 class FibonacciTask extends RecursiveTask<Long> {
     private static final long serialVersionUID = 1L;
-    private List<Long> mList = null;
-    private static int num = 0;
+    private List<Long> mList;
 
     FibonacciTask(List<Long> list) {
         mList = list;
-        System.out.println("num:" + (++num));
     }
 
     /**
@@ -97,12 +86,11 @@ class FibonacciTask extends RecursiveTask<Long> {
             if (mList.size() < 10) {
                 return cal(mList);
             } else {
-                List<List<Long>> lists = averageAssign(mList, 2);
+                List<List<Long>> lists = averageAssign(mList);
                 FibonacciTask fibonacciTask1 = new FibonacciTask(lists.get(0));
                 FibonacciTask fibonacciTask2 = new FibonacciTask(lists.get(1));
                 fibonacciTask1.fork();
                 fibonacciTask2.fork();
-                System.out.println("list0:" + lists.get(0).size() + " list1:" + lists.get(1).size());
                 return fibonacciTask1.join() + fibonacciTask2.join();
             }
         }
@@ -111,8 +99,8 @@ class FibonacciTask extends RecursiveTask<Long> {
 
     private long cal(List<Long> list) {
         long total = 0;
-        for (int i = 0; i < list.size(); i++) {
-            total = list.get(i) + total;
+        for (Long val : list) {
+            total += val;
         }
         return total;
     }
@@ -120,13 +108,13 @@ class FibonacciTask extends RecursiveTask<Long> {
     /**
      * 将一个list均分成n个list,主要通过偏移量来实现的
      */
-    private static <T> List<List<T>> averageAssign(List<T> source, int n) {
-        List<List<T>> result = new ArrayList<List<T>>();
-        int remaider = source.size() % n;  //(先计算出余数)
-        int number = source.size() / n;  //然后是商
+    private static <T> List<List<T>> averageAssign(List<T> source) {
+        List<List<T>> result = new ArrayList<>();
+        int remaider = source.size() % 2;  //(先计算出余数)
+        int number = source.size() / 2;  //然后是商
         int offset = 0;//偏移量
-        for (int i = 0; i < n; i++) {
-            List<T> value = null;
+        for (int i = 0; i < 2; i++) {
+            List<T> value;
             if (remaider > 0) {
                 value = source.subList(i * number + offset, (i + 1) * number + offset + 1);
                 remaider--;
