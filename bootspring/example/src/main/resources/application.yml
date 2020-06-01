@@ -1,5 +1,9 @@
 server:
   port: 8080
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: 500 #default 200
+    max-connections: 10000
 
 spring:
   datasource:
