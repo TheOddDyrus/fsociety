@@ -16,9 +16,10 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>letsgo</module>
+        <module>bigdata</module>
         <module>bootspring</module>
         <module>cloudspring</module>
+        <module>letsgo</module>
     </modules>
 
     <properties>

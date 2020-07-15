@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.thomax.boot.example.dao.SyncOperationDao">
+
+    <resultMap id="BaseResultMap" type="com.thomax.boot.example.model.SyncOperation">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="user_id" property="userId" jdbcType="INTEGER"/>
+        <result column="operation_time" property="operationTime" jdbcType="TIMESTAMP"/>
+        <result column="operation_type" property="operationType" jdbcType="INTEGER"/>
+        <result column="operation_data" property="operationData" jdbcType="VARCHAR"/>
+        <result column="is_success" property="isSuccess" jdbcType="INTEGER"/>
+        <result column="real_name" property="realName" jdbcType="VARCHAR"/>
+        <result column="operation_type_name" property="operationTypeName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="getAllByCondition" resultMap="BaseResultMap">
+        SELECT b.id, b.user_id, b.operation_time, b.operation_type, b.operation_data, b.is_success, a.real_name
+        FROM tb_user a, tb_operation b
+        <where>
+            a.user_id = b.user_id
+            <if test="userName != null and userName != '' " >
+                and a.real_name = #{ userName,jdbcType=VARCHAR }
+            </if>
+            <if test="beginTime != null " >
+                and b.operation_time <![CDATA[ >= ]]> #{ beginTime,jdbcType=TIMESTAMP }
+            </if>
+        </where>
+        order by b.operation_time desc
+        limit #{ startIndex,jdbcType=INTEGER }, #{ pageSize,jdbcType=INTEGER }
+    </select>
+
+    <select id="getCountByCondition" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM tb_user a, tb_operation b
+        <where>
+            a.user_id = b.user_id
+            <if test="userName != null and userName != '' " >
+                and a.real_name = #{ userName,jdbcType=VARCHAR }
+            </if>
+            <if test="beginTime != null " >
+                and b.operation_time <![CDATA[ >= ]]> #{ beginTime,jdbcType=TIMESTAMP }
+            </if>
+        </where>
+    </select>
+
+</mapper>

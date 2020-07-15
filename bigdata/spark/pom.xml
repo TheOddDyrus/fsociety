@@ -3,28 +3,19 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>fsociety</artifactId>
+        <artifactId>bigdata</artifactId>
         <groupId>com.thomax</groupId>
         <version>7777</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>bootspring</artifactId>
+    <artifactId>spark</artifactId>
     <version>7777</version>
     <packaging>pom</packaging>
 
     <modules>
-        <module>boot-example</module>
-        <module>boot-test</module>
+        <module>spark-example</module>
+        <module>spark-test</module>
     </modules>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>

@@ -9,22 +9,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>bootspring</artifactId>
+    <artifactId>bigdata</artifactId>
     <version>7777</version>
     <packaging>pom</packaging>
 
     <modules>
-        <module>boot-example</module>
-        <module>boot-test</module>
+        <module>spark</module>
     </modules>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>
