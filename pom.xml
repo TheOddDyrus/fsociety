@@ -20,7 +20,6 @@
         <module>bootspring</module>
         <module>cloudspring</module>
         <module>letsgo</module>
-
     </modules>
 
     <properties>
