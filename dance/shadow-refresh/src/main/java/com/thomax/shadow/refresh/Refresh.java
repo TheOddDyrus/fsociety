@@ -40,13 +40,13 @@ import java.util.regex.Pattern;
  */
 public class Refresh<T> {
 
-	private static final int HTTP_TIMEOUT = 10000; //单个HTTP请求的连接超时时间（毫秒）
+	private static final int HTTP_TIMEOUT = 12000; //单个HTTP请求的连接超时时间（毫秒）
 
 	private static final int PING_TOTAL = 5; //校验网速的时候每个IP PING几次
 
 	private static final int PING_TIMEOUT = 15000 * PING_TOTAL; //Ping IP的时候的响应超时时间（毫秒）
 
-	private static final int REQUEST_TOTAL = 10; //总请求次数
+	private static final int REQUEST_TOTAL = 20; //总请求次数
 
 	private static final String USER_DIR = System.getProperty("user.dir");
 
@@ -86,7 +86,6 @@ public class Refresh<T> {
 		String guiConfig = readFileContent(USER_DIR, "gui-config.json");
 		JSONObject guiObject = JSON.parseObject(guiConfig);
 		int localPort = (int) guiObject.get("localPort");
-		JSONArray configs = (JSONArray) guiObject.get("configs");
 
 		//异步获得http结果
 		Refresh<String> main = new Refresh<>();
@@ -99,16 +98,16 @@ public class Refresh<T> {
 				}
 			});
 		}
-		List<String> responseList = main.asynExec(taskList, HTTP_TIMEOUT);
+		List<String> responseList = main.asyncExec(taskList, HTTP_TIMEOUT);
 		if (responseList.size() == 0) {
-			notice("本地操作没有爬到可用账号，直接结束");
+			notice("没有爬到可用账号，请先保证电脑上的代理处于成功状态");
 		}
 
 		//剔除加密方式不支持的配置
 		List<JSONObject> availableList = new ArrayList<>();
-		for (String responseTalue : responseList) {
+		for (String responseValue : responseList) {
 			try {
-				JSONObject responseObject = JSON.parseObject(responseTalue);
+				JSONObject responseObject = JSON.parseObject(responseValue);
 				if (encryptionSet.contains(responseObject.get("method").toString())) { //校验加密方式是否支持
 					availableList.add(responseObject);
 				}
@@ -117,13 +116,11 @@ public class Refresh<T> {
 			}
 		}
 
-		//插入有效配置到原始配置中
-		Set<String> originalIp = new HashSet<>();
-		for (Object config : configs) {
-			originalIp.add(((JSONObject) config).get("server").toString());
-		}
+		//插入新的配置到原始配置中
+		Set<String> ipSet = new HashSet<>();
+		JSONArray configs = new JSONArray();
 		for (JSONObject available : availableList) {
-			if (!originalIp.contains(available.get("server").toString())) {
+			if (!ipSet.contains(available.get("server").toString())) { //去重
 				JSONObject newJsonObject = new JSONObject();
 				newJsonObject.put("server", available.get("server"));
 				newJsonObject.put("server_port", available.get("server_port"));
@@ -135,16 +132,37 @@ public class Refresh<T> {
 				newJsonObject.put("remarks", "");
 				newJsonObject.put("timeout", 5);
 				configs.add(newJsonObject);
+
+				ipSet.add(available.get("server").toString());
 			}
 		}
 
+		//configs = testPing(configs);
+
+		//更新ip配置
+		guiObject.put("configs", configs);
+		//重置配置为高可用模式
+		guiObject.put("strategy", "com.shadowsocks.strategy.ha");
+		guiObject.put("index", -1);
+
+		replaceFileContent(USER_DIR, "gui-config.json", guiObject.toJSONString());
+
+
+		//重启Shadowsocks.exe
+		execCMD("taskkill /f /t /im Shadowsocks.exe");
+		startProgram(USER_DIR + File.separator + "Shadowsocks.exe");
+
+		notice("操作结束，重新刷入" + configs.size() + "条配置！！");
+	}
+
+	private static JSONArray testPing(JSONArray configs) {
 		//异步校验Ping的信息
-		Refresh<JSONObject> main2 = new Refresh<>();
-		List<Callable<JSONObject>> taskList2 = new ArrayList<>();
+		Refresh<JSONObject> main = new Refresh<>();
+		List<Callable<JSONObject>> taskList = new ArrayList<>();
 		Pattern pa = Pattern.compile("丢失 = [0-9]+ \\(");
 		Pattern pa2 = Pattern.compile("平均 = [0-9]+ms");
 		for (Object config : configs) {
-			taskList2.add(new Callable<JSONObject>() {
+			taskList.add(new Callable<JSONObject>() {
 				@Override
 				public JSONObject call() {
 					JSONObject obj = (JSONObject) config;
@@ -196,13 +214,13 @@ public class Refresh<T> {
 				}
 			});
 		}
-		List<JSONObject> responseList2 = main2.asynExec(taskList2, PING_TIMEOUT);
-		if (responseList2.size() == 0) {
+		List<JSONObject> responseList = main.asyncExec(taskList, PING_TIMEOUT);
+		if (responseList.size() == 0) {
 			notice("经过爬数据的配置，以及校验本地配置，发现所有的配置都不可用，直接结束");
 		}
 
 		//网速排序
-		Object[] arr = responseList2.toArray();
+		Object[] arr = responseList.toArray();
 		for (int x = 0; x < arr.length - 1; x++) {
 			for (int y = 0; y < arr.length - x - 1; y++) {
 				int lost = (int) ((JSONObject) arr[y]).get("lost");
@@ -217,24 +235,18 @@ public class Refresh<T> {
 				}
 			}
 		}
+		configs = new JSONArray();
 		//移除冗余数据
 		for (Object o : arr) {
 			((JSONObject) o).remove("lost");
 			((JSONObject) o).remove("avg");
+			configs.add(o);
 		}
 
-		JSONArray newConfigs = new JSONArray(Arrays.asList(arr));
-		guiObject.put("configs", newConfigs);
-		replaceFileContent(USER_DIR, "gui-config.json", guiObject.toJSONString());
-
-		//重启Shadowsocks.exe
-		execCMD("taskkill /f /t /im Shadowsocks.exe");
-		startProgram(USER_DIR + File.separator + "Shadowsocks.exe");
-
-		notice("操作结束！！");
+		return configs;
 	}
 
-	private List<T> asynExec(List<Callable<T>> taskList, int timeout) {
+	private List<T> asyncExec(List<Callable<T>> taskList, int timeout) {
 		//异步执行任务
 		ExecutorService executorService = Executors.newFixedThreadPool(taskList.size());
 		List<Future<T>> list = new CopyOnWriteArrayList<>();
