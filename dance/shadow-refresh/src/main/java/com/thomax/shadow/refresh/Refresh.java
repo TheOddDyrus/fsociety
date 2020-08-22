@@ -1,4 +1,4 @@
-package com.thomax.shadow.update;
+package com.thomax.shadow.refresh;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  *
  * @author thomax
  */
-public class ShadowMain<T> {
+public class Refresh<T> {
 
 	private static final int HTTP_TIMEOUT = 10000; //单个HTTP请求的连接超时时间（毫秒）
 
@@ -89,7 +89,7 @@ public class ShadowMain<T> {
 		JSONArray configs = (JSONArray) guiObject.get("configs");
 
 		//异步获得http结果
-		ShadowMain<String> shadowMain = new ShadowMain<>();
+		Refresh<String> main = new Refresh<>();
 		List<Callable<String>> taskList = new ArrayList<>();
 		for (int i = 0; i < REQUEST_TOTAL; i++) {
 			taskList.add(new Callable<String>() {
@@ -99,7 +99,7 @@ public class ShadowMain<T> {
 				}
 			});
 		}
-		List<String> responseList = shadowMain.asynExec(taskList, HTTP_TIMEOUT);
+		List<String> responseList = main.asynExec(taskList, HTTP_TIMEOUT);
 		if (responseList.size() == 0) {
 			notice("本地操作没有爬到可用账号，直接结束");
 		}
@@ -139,7 +139,7 @@ public class ShadowMain<T> {
 		}
 
 		//异步校验Ping的信息
-		ShadowMain<JSONObject> shadowMain2 = new ShadowMain<>();
+		Refresh<JSONObject> main2 = new Refresh<>();
 		List<Callable<JSONObject>> taskList2 = new ArrayList<>();
 		Pattern pa = Pattern.compile("丢失 = [0-9]+ \\(");
 		Pattern pa2 = Pattern.compile("平均 = [0-9]+ms");
@@ -196,7 +196,7 @@ public class ShadowMain<T> {
 				}
 			});
 		}
-		List<JSONObject> responseList2 = shadowMain2.asynExec(taskList2, PING_TIMEOUT);
+		List<JSONObject> responseList2 = main2.asynExec(taskList2, PING_TIMEOUT);
 		if (responseList2.size() == 0) {
 			notice("经过爬数据的配置，以及校验本地配置，发现所有的配置都不可用，直接结束");
 		}
