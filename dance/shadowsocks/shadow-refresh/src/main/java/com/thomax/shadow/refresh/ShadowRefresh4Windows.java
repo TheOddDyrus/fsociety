@@ -93,7 +93,7 @@ public class ShadowRefresh4Windows<T> {
 			taskList.add(new Callable<String>() {
 				@Override
 				public String call() {
-					return sendGet("http://ss.pythonic.life/full/json", localPort);
+					return sendGet("http://ss.pythonic.life/full/json", localPort); //this request from https://fanqiang.network/
 				}
 			});
 		}
