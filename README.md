@@ -33,17 +33,17 @@ The name `fsociety` refers to **'free society'**
                         ├─ SortArithmetic.png  十大排序算法的性能分析
                         └─ ArithmeticTop10.java  十大经典算法
                     ├─cache 缓存
-                        ├─ ZookeeperDistributedLock.java  Zookeeper实现的分布式锁
-                        ├─ RedisDistributedLock.java  Redis实现的分布式锁
-                        ├─ RedisReadWriteLock.java  Redisson实现的分布式读写锁
+                        ├─ ZookeeperDistributedLock.java  Zookeeper的分布式锁
+                        ├─ RedisDistributedLock.java  Redis的分布式锁
+                        ├─ RedisReadWriteLock.java  Redisson的分布式读写锁
                         └─ CacheAnalysis  各大缓存优劣性分析
                     ├─concurrent 并发
-                        ├─ AQSHandling.java  同步器原理与三个实现：闭锁、信号量、栅栏
+                        ├─ AQSHandling.java  同步器原理：闭锁、信号量、栅栏
                         ├─ CASHandling.java  CAS操作
                         ├─ ForkJoinHanding.java  并行操作
                         ├─ FutureHandling.java  异步操作
-                        ├─ LockHanding.java  锁与synchronized的基本操作
-                        ├─ Volatile.java  volatile、Within-Thread As-If-Serial Semantics、happens-before
+                        ├─ LockHanding.java  锁与synchronized的操作
+                        ├─ Volatile.java  volatile详解
                         └─ Overview  锁的总览
                     ├─dynamic 动态
                         ├─ Reflect.java  反射
@@ -110,25 +110,5 @@ The name `fsociety` refers to **'free society'**
                         └─ OpenClosed.java  开闭原则
 
 
-
-
-
-
-
-
-           ttt          hhhhh 
-        ttt::t          h:::h 
-        t::::t          h:::h 
-        t::::t          h:::h 
-    tttttt::::ttttt     h::h hhhh           oooooooo        mmmmmm   mmmmmm       aaaaaaaaaaa     xxxxxx      xxxxxx
-    t:::::::::::::t     h::hh::::hhh      oo::::::::oo    summarize by thomax     a::::::::::a     x::::x    x::::x
-    t:::::::::::::t     h::::::::::hh    o::::::::::::o  good luck have fun!!!    aaaaaaaa::::a     x::::x  x::::x
-    ttttt::::::tttt     h:::::hhh::::h   o::::oooo::::o  m:::::::::::::::::::m            a:::a      x::::xx::::x
-        t::::t          h::::h  h:::::h  o:::o    o:::o  m:::::::::::::::::::m      aaaaaa::::a       x::::::::x
-        t::::t          h:::h    h::::h  o:::o    o:::o  m:::m   m:::m   m:::m    aa::::::::::a        x::::::x
-        t::::t          h:::h    h::::h  o:::o    o:::o  m:::m   m:::m   m:::m   a::::aaa:::::a        x::::::x
-        t::::t   ttttt  h:::h    h::::h  o:::o    o:::o  m:::m   m:::m   m:::m  a::::a   a::::a       x::::::::x
-        t:::::ttt::::t  h:::h    h::::h  o::::oooo::::o  m:::m   m:::m   m:::m  a::::a   a::::a      x::::xx::::x
-        tt:::::::::::t  h:::h    h::::h  o::::::::::::o  m:::m   m:::m   m:::m  a:::::aaa:::::a     x::::x  x::::x
-          tt::::::::tt  h:::h    h::::h   oo:::::::::oo  m:::m   m:::m   m:::m   a:::::::::aa::a   x::::x    x::::x
-            ttttttttt    hhhh    hhhhhh    oooooooooo    mmmmm   mmmmm   mmmmm    aaaaaaaaa  aaa  xxxxxx      xxxxxx
+                                                 summarize by thomax
+                                                 good luck have fun!!!
