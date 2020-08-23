@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  *
  * @author thomax
  */
-public class Refresh<T> {
+public class ShadowRefresh4Windows<T> {
 
 	private static final int HTTP_TIMEOUT = 12000; //单个HTTP请求的连接超时时间（毫秒）
 
@@ -87,7 +87,7 @@ public class Refresh<T> {
 		int localPort = (int) guiObject.get("localPort");
 
 		//异步获得http结果
-		Refresh<String> main = new Refresh<>();
+		ShadowRefresh4Windows<String> main = new ShadowRefresh4Windows<>();
 		List<Callable<String>> taskList = new ArrayList<>();
 		for (int i = 0; i < REQUEST_TOTAL; i++) {
 			taskList.add(new Callable<String>() {
@@ -156,7 +156,7 @@ public class Refresh<T> {
 
 	private static JSONArray testPing(JSONArray configs) {
 		//异步校验Ping的信息
-		Refresh<JSONObject> main = new Refresh<>();
+		ShadowRefresh4Windows<JSONObject> main = new ShadowRefresh4Windows<>();
 		List<Callable<JSONObject>> taskList = new ArrayList<>();
 		Pattern pa = Pattern.compile("丢失 = [0-9]+ \\(");
 		Pattern pa2 = Pattern.compile("平均 = [0-9]+ms");
