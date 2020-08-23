@@ -110,5 +110,5 @@ The name `fsociety` refers to **'free society'**
                         └─ OpenClosed.java  开闭原则
 
 
-                                                 summarize by thomax
-                                                 good luck have fun!!!
+                                                 Summarize by thomax
+                                                 Good luck have fun!!!
