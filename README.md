@@ -23,6 +23,9 @@ The name `fsociety` refers to **'free society'**
             ├─ ribbon
             └─ zuul
         ├─dance
+            ├─ javaagent 字节码插桩
+                ├─ agent
+                └─ normal
             └─ shadowsocks Shadowsocks工具
                 ├─ shadow-proxy
                 └─ shadow-refresh

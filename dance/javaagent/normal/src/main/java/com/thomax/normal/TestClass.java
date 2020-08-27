@@ -1,8 +1,8 @@
 package com.thomax.normal;
 
-public class TestAgent {
+public class TestClass {
 
-    public void test() {
+    public void testMethod() {
         System.out.println("...test agent...");
     }
 
