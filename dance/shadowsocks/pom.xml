@@ -11,9 +11,11 @@
 
     <artifactId>shadowsocks</artifactId>
     <packaging>pom</packaging>
+
     <modules>
         <module>shadow-proxy</module>
         <module>shadow-refresh</module>
+        <module>shadow-client</module>
     </modules>
 
 

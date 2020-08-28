@@ -1,0 +1,10 @@
+{
+  "password": "eIW0Dnk69454e6nSwuspv9DmS201tQ0D",
+  "localPort": 1080,
+  "method": "aes-256-cfb",
+  "logLevel": "INFO",
+  "remotePort": 8097,
+  "proxyType": "socks5",
+  "localIpAddress": "127.0.0.1",
+  "remoteIpAddress": "45.79.96.104"
+}
