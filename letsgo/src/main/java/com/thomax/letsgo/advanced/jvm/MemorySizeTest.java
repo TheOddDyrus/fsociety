@@ -10,6 +10,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 对象占用内存测试（单位：byte）
+ *
+ * Object object = new Object(): object占八个字节，object的引用占四个字节 ==> 一个空对象占用：8byte + 4byte = 12byte
  */
 public class MemorySizeTest {
 
