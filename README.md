@@ -57,6 +57,7 @@ The name `fsociety` refers to **'free society'**
                         ├─ ClassLoaderTest.java.java  类加载测试
                         ├─ MemoryOverflowTest.java  内存溢出测试
                         ├─ MemoryRecoveryTest.java  内存回收测试
+                        ├─ MemorySizeTest.java  对象占用内存测试
                         ├─ HotSpot  JDK默认虚拟机结构
                         └─ JVM  虚拟机分析
                     ├─mq 中间件
