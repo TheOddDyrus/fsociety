@@ -25,14 +25,16 @@ public class MemorySizeTest {
                     }
                 });
 
-        for (int i = 0; i < 50000; i++) {
+        for (int i = 0; i < 50400; i++) {
             String x = "ABCDEFGHIJK" + i;
             x = x.substring(x.length() - 12);
             cache.get(x);
         }
 
         System.out.println("size:" + cache.size());
-        System.out.println("byte:" + RamUsageEstimator.sizeOf(cache));
+        System.out.println("all byte:" + RamUsageEstimator.sizeOf(cache)); //计算指定对象及其引用树上的所有对象的综合大小，单位字节
+        System.out.println("all memory:" + RamUsageEstimator.humanSizeOf(cache)); //计算指定对象及其引用树上的所有对象的综合大小，并返回可读的结果
+        System.out.println("root byte:" + RamUsageEstimator.shallowSizeOf(cache)); //计算指定对象本身在堆空间的大小，单位字节
     }
 
 }
