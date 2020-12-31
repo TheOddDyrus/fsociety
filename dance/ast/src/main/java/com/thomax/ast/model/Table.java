@@ -1,0 +1,51 @@
+package com.thomax.ast.model;
+
+public class Table {
+
+    private String dbName;
+
+    private String tableName;
+
+    private String alias;
+
+    private boolean isPrimary;
+
+    public Table(String dbName, String tableName, String alias, boolean isPrimary) {
+        this.dbName = dbName;
+        this.tableName = tableName;
+        this.alias = alias;
+        this.isPrimary = isPrimary;
+    }
+
+    public String getDbName() {
+        return dbName;
+    }
+
+    public void setDbName(String dbName) {
+        this.dbName = dbName;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
+    public boolean getIsPrimary() {
+        return isPrimary;
+    }
+
+    public void setIsPrimary(boolean isPrimary) {
+        this.isPrimary = isPrimary;
+    }
+}
