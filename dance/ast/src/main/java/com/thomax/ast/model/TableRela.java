@@ -1,7 +1,6 @@
 package com.thomax.ast.model;
 
-import com.alibaba.druid.sql.ast.SQLExpr;
-
+import java.util.ArrayList;
 import java.util.List;
 
 public class TableRela {
@@ -14,7 +13,7 @@ public class TableRela {
 
     private RelaType rela;
 
-    private List<SQLExpr> conditionList;
+    private List<TableCondition> conditionList;
 
     public TableRela getParent() {
         return parent;
@@ -48,11 +47,20 @@ public class TableRela {
         this.rela = rela;
     }
 
-    public List<SQLExpr> getConditionList() {
+    public List<TableCondition> getConditionList() {
         return conditionList;
     }
 
-    public void setConditionList(List<SQLExpr> conditionList) {
+    public void setConditionList(List<TableCondition> conditionList) {
         this.conditionList = conditionList;
     }
+
+    public void addCondition(TableCondition tableCondition) {
+        if (conditionList == null) {
+            conditionList = new ArrayList<>();
+        }
+
+        conditionList.add(tableCondition);
+    }
+
 }

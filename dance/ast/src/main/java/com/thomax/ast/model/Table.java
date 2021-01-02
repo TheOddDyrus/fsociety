@@ -8,13 +8,10 @@ public class Table {
 
     private String alias;
 
-    private boolean isPrimary;
-
-    public Table(String dbName, String tableName, String alias, boolean isPrimary) {
+    public Table(String dbName, String tableName, String alias) {
         this.dbName = dbName;
         this.tableName = tableName;
         this.alias = alias;
-        this.isPrimary = isPrimary;
     }
 
     public String getDbName() {
@@ -41,11 +38,4 @@ public class Table {
         this.alias = alias;
     }
 
-    public boolean getIsPrimary() {
-        return isPrimary;
-    }
-
-    public void setIsPrimary(boolean isPrimary) {
-        this.isPrimary = isPrimary;
-    }
 }
