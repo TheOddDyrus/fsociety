@@ -58,12 +58,13 @@ public class TableRela {
             columnList = new ArrayList<>();
         } else {
             for (Column column : columnList) {
-                if (column.getAlias().equals(newColumn.getAlias()) && column.getColumn().equals(newColumn.getColumn())) {
+                if (column.getAlias()!= null &&
+                        column.getAlias().equals(newColumn.getAlias()) &&
+                        column.getColumn().equals(newColumn.getColumn())) {
                     return;
                 }
             }
         }
-
 
         columnList.add(newColumn);
     }

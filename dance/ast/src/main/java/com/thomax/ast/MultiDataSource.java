@@ -26,14 +26,31 @@ import com.thomax.ast.model.TableRela;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 多数据源操作
  */
 public class MultiDataSource {
+
+    private static final String PROPERTY_TOPIC = "PROPERTY_TOPIC";
+
+    private static final String EVENT_TOPIC = "EVENT_TOPIC";
+
+    private static final Set<String> TOPIC_COLUMNS = new HashSet<>();
+
+    static {
+        TOPIC_COLUMNS.add("dataTimeStamp");
+        TOPIC_COLUMNS.add("tslType");
+        TOPIC_COLUMNS.add("macAddress");
+        TOPIC_COLUMNS.add("deviceId");
+        TOPIC_COLUMNS.add("productId");
+        TOPIC_COLUMNS.add("command");
+    }
 
     public static void main(String[] args) {
         String sql = "SELECT t1.hix, t3.pix " +
@@ -55,13 +72,6 @@ public class MultiDataSource {
         topicData.put("command", "generalMessage.getCommand()");
         HashMap<String, Object> propertyData = new HashMap<>();
         topicData.put("data", propertyData);
-
-        //属性上报的Topic
-        String propertyTopic = "/sys/0000000100020101/thing/event/property/post";
-        String propertyTopicAlias = "PROPERTY_TOPIC";
-        //事件上报的Topic
-        String eventTopic = "/sys/0000000100020101/thing/event/${tsl.event.identifer}/post";
-        String eventTopicAlias = "EVENT_TOPIC";
 
         try {
             Map<String, Object> result = parseSQL(sql, topicData);
@@ -95,18 +105,70 @@ public class MultiDataSource {
         parseTable(query.getFrom(), tableRela);
 
         //Step2 - COLUMN
+        List<Column> selectColumnList = new ArrayList<>();
         List<SQLSelectItem> selectList = query.getSelectList();
         for (SQLSelectItem sqlSelectItem : selectList) {
             SQLPropertyExpr column = (SQLPropertyExpr) sqlSelectItem.getExpr();
             String alias = ((SQLIdentifierExpr) column.getOwner()).getName();
             String name = column.getName();
-            addColumn(new Column(alias, name), tableRela);
+            Column newColumn = new Column(alias, name);
+            selectColumnList.add(newColumn);
+
+            addColumn(newColumn, tableRela);
         }
 
         //Step3 - CONDITION
         parseCondition(query.getWhere(), tableRela, null);
+        if (tableRela.getParent() != null && !checkCondition(tableRela, new HashSet<>())) {
+            throw new Exception("多个表一定要有互相之间的关联关系");
+        }
 
-        return execAST(tableRela, topicData);
+        //Step4 - EXECUTE
+        Map<String, Object> result = execAST(tableRela, topicData);
+
+        //Step5 - FILTER
+        Map<String, Object> finalResult = new LinkedHashMap<>();
+        for (Column selectColumn : selectColumnList) {
+            if (result.containsValue(selectColumn.getAlias())) {
+                finalResult.put(selectColumn.getAlias(), result.get(selectColumn.getAlias()));
+            }
+        }
+
+        return finalResult;
+    }
+
+    /**
+     * 检测条件：
+     * ①2张表之间需要有id相等的关联条件（t1.id = t2.id）
+     *
+     * @param tableRela 表的关系
+     * @return
+     */
+    private static boolean checkCondition(TableRela tableRela, Set<String> leftTableList) {
+        if (tableRela.getParent() != null) {
+            if (!checkCondition(tableRela.getParent(), leftTableList)) {
+                return false;
+            }
+        } else {
+            String leftTableAlias = getTableAlias(tableRela.getLeft());
+            //TODO 左表.for
+            String rightTableAlias = getTableAlias(tableRela.getRight());
+
+            List<TableCondition> conditionList = tableRela.getConditionList();
+            for (TableCondition tableCondition : conditionList) {
+                Column leftColumn = tableCondition.getLeft();
+                Column rightColumn = tableCondition.getRight();
+                if (tableCondition.getOperator().equals(OperatorType.EQUALITY)) {
+                    if ((leftTableAlias.equals(leftColumn.getAlias()) && rightTableAlias.equals(rightColumn.getAlias())) ||
+                            (leftTableAlias.equals(rightColumn.getAlias()) && rightTableAlias.equals(leftColumn.getAlias()))) {
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        return true;
     }
 
     /**
@@ -119,11 +181,19 @@ public class MultiDataSource {
     private static Map<String, Object> execAST(TableRela tableRela, Map<String, Object> topicData) {
         if (tableRela.getParent() != null) {
             execAST(tableRela.getParent(), topicData);
-        }
+        } else {
+            List<Column> columnList = tableRela.getColumnList();
 
-        //exec right
-        topicData = new LinkedHashMap<>();
-        topicData.put("topicData", topicData);
+            //condition
+            List<TableCondition> conditionList = tableRela.getConditionList();
+
+            //right table
+            Table right = tableRela.getRight();
+
+
+            topicData = new LinkedHashMap<>();
+            topicData.put("topicData", topicData);
+        }
 
         return topicData;
     }
@@ -227,9 +297,9 @@ public class MultiDataSource {
                             tableCondition.setOperator(OperatorType.EQUALITY);
                             break;
                         case NotEqual:
-                            tableCondition.setOperator(OperatorType.NOT_EQUAL);
-                            break;
+                            throw new Exception("两个表之间禁止使用!=来进行关联查询");
                     }
+                    addCondition(tableRela, tableCondition, false);
                 } else {
                     //使用tableCondition.left存放查询条件内的唯一字段，如果不存在唯一字段那只需要表达式的字符串
                     if (left instanceof SQLPropertyExpr) {
@@ -238,9 +308,8 @@ public class MultiDataSource {
                         tableCondition.setLeft(parseColumn(right, tableRela));
                     }
                     tableCondition.setExpr(where.toString());
+                    addCondition(tableRela, tableCondition, true);
                 }
-
-                addCondition(tableRela, tableCondition, false);
             }
 
             if (right instanceof SQLBinaryOpExpr) {
@@ -266,6 +335,9 @@ public class MultiDataSource {
             prefix.append(column.getAlias()).append(".").append(column.getColumn()).append(where.isNot() ? " NOT IN (" : " IN (");
 
             List<SQLExpr> targetList = where.getTargetList();
+            if (targetList.size() > 100) {
+                throw new Exception("使用IN ()语句时，括号内的集合数不能超过100");
+            }
             boolean isNumber = targetList.get(0) instanceof SQLIntegerExpr;
             for (SQLExpr sqlExpr : targetList) {
                 if (isNumber) {
@@ -277,7 +349,7 @@ public class MultiDataSource {
             String exprStr = prefix.replace(prefix.length() - 1, prefix.length(), ")").toString();
             tableCondition.setExpr(exprStr);
 
-            addCondition(tableRela, tableCondition, false);
+            addCondition(tableRela, tableCondition, true);
         } else {
             throw new Exception("出现不支持的语法");
         }
@@ -298,6 +370,7 @@ public class MultiDataSource {
      *
      * @param tableRela 表的关系
      * @param tableCondition 条件
+     * @param isLastCheck true-最后一次检测字段；false-检测一次字段后改变为true
      */
     private static void addCondition(TableRela tableRela, TableCondition tableCondition, boolean isLastCheck) {
         Column leftColumn = tableCondition.getLeft();
@@ -381,7 +454,15 @@ public class MultiDataSource {
      * @return
      */
     private static String getTableAlias(Table table) {
-        return table.getAlias() != null ? table.getAlias() : table.getDbName() + "." + table.getTableName();
+        if (table.getAlias() != null) {
+            return table.getAlias();
+        } else {
+            if (table.getDbName() != null) {
+                return table.getDbName() + "." + table.getTableName();
+            } else {
+                return table.getTableName();
+            }
+        }
     }
 
 }
