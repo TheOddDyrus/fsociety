@@ -56,20 +56,23 @@ public class MultiDataSource {
         HashMap<String, Object> propertyData = new HashMap<>();
         topicData.put("data", propertyData);
 
-        Map<String, Object> singleRow = new LinkedHashMap<>();
-        singleRow.put("topicData", topicData);
-
-        String topicTable = "X1";
+        //属性上报的Topic
+        String propertyTopic = "/sys/0000000100020101/thing/event/property/post";
+        String propertyTopicAlias = "PROPERTY_TOPIC";
+        //事件上报的Topic
+        String eventTopic = "/sys/0000000100020101/thing/event/${tsl.event.identifer}/post";
+        String eventTopicAlias = "EVENT_TOPIC";
 
         try {
-            parseSQL(sql, topicData);
+            Map<String, Object> result = parseSQL(sql, topicData);
+            System.out.println(result);
         } catch (Exception e) {
             System.out.println("解析SQL过程发生异常：" + e.getMessage());
         }
     }
 
     /**
-     * 遍历Druid AST来操作多数据源。
+     * 解析SQL，进行多数据源关联查询
      *
      * 支持的关键字：SELECT FROM WHERE LEFT RIGHT INNER JOIN ON NOT IN AND OR
      * 支持的符号： ( ) , = != ''
@@ -78,29 +81,51 @@ public class MultiDataSource {
      * @param sql
      * @param topicData 主表数据源
      */
-    public static void parseSQL(String sql, HashMap<String, Object> topicData) throws Exception {
-        //parse
-        List<SQLStatement> statementList = SQLUtils.parseStatements(sql, JdbcConstants.MYSQL); //解析大概耗时500ms（如果把tableRela转JSON，解析JSON时间差不多）
+    public static Map<String, Object> parseSQL(String sql, HashMap<String, Object> topicData) throws Exception {
+        //Parse
+        List<SQLStatement> statementList = SQLUtils.parseStatements(sql, JdbcConstants.MYSQL); //这步解析大概耗时500ms（如果把tableRela转JSON，解析JSON时间差不多）
         SQLSelectStatement statement = (SQLSelectStatement) statementList.get(0);
         SQLSelect sqlSelect = (SQLSelect) statement.getChildren().get(0);
         MySqlSelectQueryBlock query = (MySqlSelectQueryBlock) sqlSelect.getQuery();
 
-        //COLUMN
-        List<Column> selectColumnList = new ArrayList<>();
+        //Business AST
+        TableRela tableRela = new TableRela();
+
+        //Step1 - TABLE
+        parseTable(query.getFrom(), tableRela);
+
+        //Step2 - COLUMN
         List<SQLSelectItem> selectList = query.getSelectList();
         for (SQLSelectItem sqlSelectItem : selectList) {
             SQLPropertyExpr column = (SQLPropertyExpr) sqlSelectItem.getExpr();
             String alias = ((SQLIdentifierExpr) column.getOwner()).getName();
             String name = column.getName();
-            selectColumnList.add(new Column(alias, name));
+            addColumn(new Column(alias, name), tableRela);
         }
 
-        //TABLE
-        TableRela tableRela = new TableRela();
-        parseTable(query.getFrom(), tableRela, selectColumnList);
+        //Step3 - CONDITION
+        parseCondition(query.getWhere(), tableRela, null);
 
-        //CONDITION
-        parseCondition(query.getWhere(), tableRela, null, selectColumnList);
+        return execAST(tableRela, topicData);
+    }
+
+    /**
+     * 遍历业务AST来操作多数据源
+     *
+     * @param tableRela 表的关系
+     * @param topicData 主表数据源
+     * @return
+     */
+    private static Map<String, Object> execAST(TableRela tableRela, Map<String, Object> topicData) {
+        if (tableRela.getParent() != null) {
+            execAST(tableRela.getParent(), topicData);
+        }
+
+        //exec right
+        topicData = new LinkedHashMap<>();
+        topicData.put("topicData", topicData);
+
+        return topicData;
     }
 
     /**
@@ -108,16 +133,15 @@ public class MultiDataSource {
      *
      * @param tableSource 表的数据源
      * @param tableRela 表的关系
-     * @param selectColumnList SQL中SELECT的字段 + 所有表关联所涉及的字段
      * @throws Exception
      */
-    private static void parseTable(SQLTableSource tableSource, TableRela tableRela, List<Column> selectColumnList) throws Exception {
+    private static void parseTable(SQLTableSource tableSource, TableRela tableRela) throws Exception {
         SQLJoinTableSource tables = (SQLJoinTableSource) tableSource;
         SQLTableSource left = tables.getLeft();
         if (left instanceof SQLJoinTableSource) {
             TableRela parent = new TableRela();
             tableRela.setParent(parent);
-            parseTable(left, parent, selectColumnList);
+            parseTable(left, parent);
         } else {
             //Primary table - Topic
             addTable(left, tableRela, true);
@@ -134,15 +158,15 @@ public class MultiDataSource {
                 break;
             case JOIN: //LEFT JOIN
                 tableRela.setRela(RelaType.LEFT_JOIN);
-                parseCondition(tables.getCondition(),  tableRela, null, selectColumnList);
+                parseCondition(tables.getCondition(),  tableRela, null);
                 break;
             case RIGHT_OUTER_JOIN: //RIGHT JOIN
                 tableRela.setRela(RelaType.RIGHT_JOIN);
-                parseCondition(tables.getCondition(), tableRela, null, selectColumnList);
+                parseCondition(tables.getCondition(), tableRela, null);
                 break;
             case INNER_JOIN: //INNER JOIN
                 tableRela.setRela(RelaType.INNER_JOIN);
-                parseCondition(tables.getCondition(), tableRela, null, selectColumnList);
+                parseCondition(tables.getCondition(), tableRela, null);
                 break;
         }
     }
@@ -175,10 +199,9 @@ public class MultiDataSource {
      * @param expr 条件的数据源
      * @param tableRela 表的关系
      * @param conditionType 条件类型
-     * @param selectColumnList SQL中SELECT的字段 + 所有表关联所涉及的字段
      * @throws Exception
      */
-    private static void parseCondition(SQLExpr expr, TableRela tableRela, ConditionType conditionType, List<Column> selectColumnList) throws Exception {
+    private static void parseCondition(SQLExpr expr, TableRela tableRela, ConditionType conditionType) throws Exception {
         TableCondition tableCondition;
         if (expr instanceof SQLBinaryOpExpr) {
             SQLBinaryOpExpr where = (SQLBinaryOpExpr) expr;
@@ -186,7 +209,7 @@ public class MultiDataSource {
             SQLExpr right = where.getRight();
 
             if (left instanceof SQLBinaryOpExpr) {
-                parseCondition(left, tableRela, conditionType, selectColumnList);
+                parseCondition(left, tableRela, conditionType);
             } else {
                 tableCondition = new TableCondition();
                 if (conditionType == null) {
@@ -197,8 +220,8 @@ public class MultiDataSource {
 
                 //只有2个同时为字段的才进行解析，其余的直接作为查询条件
                 if (left instanceof SQLPropertyExpr && right instanceof SQLPropertyExpr) {
-                    tableCondition.setLeft(addColumn(left, selectColumnList));
-                    tableCondition.setRight(addColumn(right, selectColumnList));
+                    tableCondition.setLeft(parseColumn(left, tableRela));
+                    tableCondition.setRight(parseColumn(right, tableRela));
                     switch (where.getOperator()) {
                         case Equality:
                             tableCondition.setOperator(OperatorType.EQUALITY);
@@ -210,9 +233,9 @@ public class MultiDataSource {
                 } else {
                     //使用tableCondition.left存放查询条件内的唯一字段，如果不存在唯一字段那只需要表达式的字符串
                     if (left instanceof SQLPropertyExpr) {
-                        tableCondition.setLeft(addColumn(left, selectColumnList));
+                        tableCondition.setLeft(parseColumn(left, tableRela));
                     } else if (right instanceof SQLPropertyExpr) {
-                        tableCondition.setLeft(addColumn(right, selectColumnList));
+                        tableCondition.setLeft(parseColumn(right, tableRela));
                     }
                     tableCondition.setExpr(where.toString());
                 }
@@ -230,12 +253,12 @@ public class MultiDataSource {
                         rightConditionType = ConditionType.BOOLEAN_OR;
                         break;
                 }
-                parseCondition(right, tableRela, rightConditionType, selectColumnList);
+                parseCondition(right, tableRela, rightConditionType);
             }
         } else if (expr instanceof SQLInListExpr) {
             SQLInListExpr where = (SQLInListExpr) expr;
             tableCondition = new TableCondition();
-            Column column = addColumn(where, selectColumnList);
+            Column column = parseColumn(where, tableRela);
             //使用tableCondition.left存放查询条件内的唯一字段
             tableCondition.setLeft(column);
 
@@ -285,7 +308,7 @@ public class MultiDataSource {
         if (parent == null) { //不用使用leftTable来做判断，一直递归到parent == null可直接插入条件
             tableRela.addCondition(tableCondition);
         } else {
-            String checkAlias = rightTable.getAlias() != null ? rightTable.getAlias() : rightTable.getDbName() + "." + rightTable.getTableName();
+            String checkAlias = getTableAlias(rightTable);
 
             if (checkAlias.equals(leftColumn.getAlias())) {
                 if (isLastCheck) {
@@ -306,13 +329,13 @@ public class MultiDataSource {
     }
 
     /**
-     * 新增字段
+     * 解析字段
      *
      * @param expr 字段的数据源
-     * @param selectColumnList SQL中SELECT的字段 + 所有表关联所涉及的字段
+     * @param tableRela 表的关系
      * @return
      */
-    private static Column addColumn(SQLExpr expr, List<Column> selectColumnList) {
+    private static Column parseColumn(SQLExpr expr, TableRela tableRela) {
         SQLPropertyExpr propertyExpr = (SQLPropertyExpr) expr;
         SQLExpr owner = propertyExpr.getOwner();
 
@@ -331,30 +354,34 @@ public class MultiDataSource {
         String leftColumn = propertyExpr.getName();
         Column newColumn = new Column(leftAlias, leftColumn);
 
-        selectColumn(newColumn, selectColumnList);
+        addColumn(newColumn, tableRela);
 
         return newColumn;
     }
 
     /**
-     * 选择字段
+     * 新增字段
      *
-     * @param newColumn 新的字段
-     * @param selectColumnList SQL中SELECT的字段 + 所有表关联所涉及的字段
+     * @param column 新的字段
+     * @param tableRela 表的关系
      */
-    private static void selectColumn(Column newColumn, List<Column> selectColumnList) {
-        for (Column column : selectColumnList) {
-            boolean isSame = false;
-            if (column.getColumn().equals(newColumn.getColumn())) {
-                isSame = true;
-            }
-
-            if (isSame && (column.getAlias() == null || column.getAlias().equals(newColumn.getAlias()))) {
-                return;
-            }
+    private static void addColumn(Column column, TableRela tableRela) {
+        String checkAlias = getTableAlias(tableRela.getRight());
+        if (checkAlias.equals(column.getAlias())) {
+            tableRela.addColumn(column);
+        } else {
+            addColumn(column, tableRela.getParent());
         }
+    }
 
-        selectColumnList.add(newColumn);
+    /**
+     * 获得表的别名
+     *
+     * @param table 表的对象
+     * @return
+     */
+    private static String getTableAlias(Table table) {
+        return table.getAlias() != null ? table.getAlias() : table.getDbName() + "." + table.getTableName();
     }
 
 }

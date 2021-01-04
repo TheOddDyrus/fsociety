@@ -13,6 +13,8 @@ public class TableRela {
 
     private RelaType rela;
 
+    private List<Column> columnList;
+
     private List<TableCondition> conditionList;
 
     public TableRela getParent() {
@@ -47,12 +49,27 @@ public class TableRela {
         this.rela = rela;
     }
 
-    public List<TableCondition> getConditionList() {
-        return conditionList;
+    public List<Column> getColumnList() {
+        return columnList;
     }
 
-    public void setConditionList(List<TableCondition> conditionList) {
-        this.conditionList = conditionList;
+    public void addColumn(Column newColumn) {
+        if (columnList == null) {
+            columnList = new ArrayList<>();
+        } else {
+            for (Column column : columnList) {
+                if (column.getAlias().equals(newColumn.getAlias()) && column.getColumn().equals(newColumn.getColumn())) {
+                    return;
+                }
+            }
+        }
+
+
+        columnList.add(newColumn);
+    }
+
+    public List<TableCondition> getConditionList() {
+        return conditionList;
     }
 
     public void addCondition(TableCondition tableCondition) {
