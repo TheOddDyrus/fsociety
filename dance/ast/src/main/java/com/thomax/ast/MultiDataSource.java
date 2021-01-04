@@ -74,7 +74,7 @@ public class MultiDataSource {
         topicData.put("data", propertyData);
 
         try {
-            Map<String, Object> result = parseSQL(sql, topicData);
+            List<Map<String, Object>> result = parseSQL(sql, topicData);
             System.out.println(result);
         } catch (Exception e) {
             System.out.println("解析SQL过程发生异常：" + e.getMessage());
@@ -91,7 +91,7 @@ public class MultiDataSource {
      * @param sql
      * @param topicData 主表数据源
      */
-    public static Map<String, Object> parseSQL(String sql, HashMap<String, Object> topicData) throws Exception {
+    public static  List<Map<String, Object>> parseSQL(String sql, HashMap<String, Object> topicData) throws Exception {
         //Parse
         List<SQLStatement> statementList = SQLUtils.parseStatements(sql, JdbcConstants.MYSQL); //这步解析大概耗时500ms（如果把tableRela转JSON，解析JSON时间差不多）
         SQLSelectStatement statement = (SQLSelectStatement) statementList.get(0);
@@ -119,53 +119,60 @@ public class MultiDataSource {
 
         //Step3 - CONDITION
         parseCondition(query.getWhere(), tableRela, null);
-        if (tableRela.getParent() != null && !checkCondition(tableRela, new HashSet<>())) {
+        if (tableRela.getParent() != null && checkConditionInvalid(tableRela, new HashSet<>())) {
             throw new Exception("多个表一定要有互相之间的关联关系");
         }
 
         //Step4 - EXECUTE
-        Map<String, Object> result = execAST(tableRela, topicData);
+        List<Map<String, Object>> result = new ArrayList<>();
+        result.add(topicData);
+        execAST(tableRela, result);
 
         //Step5 - FILTER
-        Map<String, Object> finalResult = new LinkedHashMap<>();
+        List<Map<String, Object>> finalResult = new ArrayList<>(result.size());
         for (Column selectColumn : selectColumnList) {
-            if (result.containsValue(selectColumn.getAlias())) {
-                finalResult.put(selectColumn.getAlias(), result.get(selectColumn.getAlias()));
+            Map<String, Object> newRow = new LinkedHashMap<>();
+            for (Map<String, Object> row : result) {
+                if (row.containsValue(selectColumn.getAlias())) {
+                    newRow.put(selectColumn.getAlias(), row.get(selectColumn.getAlias()));
+                }
             }
+            finalResult.add(newRow);
         }
 
         return finalResult;
     }
 
     /**
-     * 检测条件：
+     * 检测条件是否无效：
      * ①2张表之间需要有id相等的关联条件（t1.id = t2.id）
      *
      * @param tableRela 表的关系
      * @return
      */
-    private static boolean checkCondition(TableRela tableRela, Set<String> leftTableList) {
+    private static boolean checkConditionInvalid(TableRela tableRela, Set<String> leftTableAliasList) {
         if (tableRela.getParent() != null) {
-            if (!checkCondition(tableRela.getParent(), leftTableList)) {
-                return false;
+            if (checkConditionInvalid(tableRela.getParent(), leftTableAliasList)) {
+                return true;
             }
         } else {
-            String leftTableAlias = getTableAlias(tableRela.getLeft());
-            //TODO 左表.for
-            String rightTableAlias = getTableAlias(tableRela.getRight());
+            leftTableAliasList.add(getTableAlias(tableRela.getLeft()));
+        }
 
-            List<TableCondition> conditionList = tableRela.getConditionList();
-            for (TableCondition tableCondition : conditionList) {
-                Column leftColumn = tableCondition.getLeft();
-                Column rightColumn = tableCondition.getRight();
-                if (tableCondition.getOperator().equals(OperatorType.EQUALITY)) {
+        String rightTableAlias = getTableAlias(tableRela.getRight());
+        List<TableCondition> conditionList = tableRela.getConditionList();
+        for (TableCondition tableCondition : conditionList) {
+            Column leftColumn = tableCondition.getLeft();
+            Column rightColumn = tableCondition.getRight();
+            if (tableCondition.getOperator().equals(OperatorType.EQUALITY)) {
+                for (String leftTableAlias : leftTableAliasList) {
                     if ((leftTableAlias.equals(leftColumn.getAlias()) && rightTableAlias.equals(rightColumn.getAlias())) ||
                             (leftTableAlias.equals(rightColumn.getAlias()) && rightTableAlias.equals(leftColumn.getAlias()))) {
-                        break;
+                        leftTableAliasList.add(rightColumn.getAlias());
+                        return false;
                     }
                 }
             }
-
         }
 
         return true;
@@ -178,24 +185,39 @@ public class MultiDataSource {
      * @param topicData 主表数据源
      * @return
      */
-    private static Map<String, Object> execAST(TableRela tableRela, Map<String, Object> topicData) {
+    private static void execAST(TableRela tableRela, List<Map<String, Object>> result) {
+        Table left = null;
         if (tableRela.getParent() != null) {
-            execAST(tableRela.getParent(), topicData);
+            execAST(tableRela.getParent(), result);
         } else {
-            List<Column> columnList = tableRela.getColumnList();
-
-            //condition
-            List<TableCondition> conditionList = tableRela.getConditionList();
-
-            //right table
-            Table right = tableRela.getRight();
-
-
-            topicData = new LinkedHashMap<>();
-            topicData.put("topicData", topicData);
+            left = tableRela.getLeft();
         }
 
-        return topicData;
+        List<Column> columnList = tableRela.getColumnList();
+
+        //condition
+        List<TableCondition> conditionList = tableRela.getConditionList();
+
+        //right table
+        Table right = tableRela.getRight();
+
+        for (TableCondition tableCondition : conditionList) {
+            if (tableCondition.getExpr() != null) {
+                if (tableCondition.getLeft().getAlias().equals(getTableAlias(right))) {
+
+                } else {//topic or collection
+
+                }
+            } else {
+                ConditionType condition = tableCondition.getCondition();
+                switch (condition) {
+                    case BOOLEAN_OR:
+                        break;
+                    case BOOLEAN_AND:
+                        break;
+                }
+            }
+        }
     }
 
     /**
