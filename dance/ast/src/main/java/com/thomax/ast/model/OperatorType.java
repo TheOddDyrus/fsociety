@@ -2,7 +2,7 @@ package com.thomax.ast.model;
 
 public enum OperatorType {
 
-    EQUALITY,
+    EQUAL,
 
     NOT_EQUAL,
 

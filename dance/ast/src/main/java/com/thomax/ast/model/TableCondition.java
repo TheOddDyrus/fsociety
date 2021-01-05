@@ -1,5 +1,7 @@
 package com.thomax.ast.model;
 
+import java.util.List;
+
 public class TableCondition {
 
     private ConditionType condition;
@@ -10,7 +12,7 @@ public class TableCondition {
 
     private OperatorType operator;
 
-    private String expr;
+    private List<Object> collection;
 
     public ConditionType getCondition() {
         return condition;
@@ -44,12 +46,12 @@ public class TableCondition {
         this.operator = operator;
     }
 
-    public String getExpr() {
-        return expr;
+    public List<Object> getCollection() {
+        return collection;
     }
 
-    public void setExpr(String expr) {
-        this.expr = expr;
+    public void setCollection(List<Object> collection) {
+        this.collection = collection;
     }
 
 }

@@ -4,6 +4,7 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLExpr;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.expr.SQLBinaryOpExpr;
+import com.alibaba.druid.sql.ast.expr.SQLCharExpr;
 import com.alibaba.druid.sql.ast.expr.SQLIdentifierExpr;
 import com.alibaba.druid.sql.ast.expr.SQLInListExpr;
 import com.alibaba.druid.sql.ast.expr.SQLIntegerExpr;
@@ -25,6 +26,7 @@ import com.thomax.ast.model.TableCondition;
 import com.thomax.ast.model.TableRela;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -55,7 +57,7 @@ public class MultiDataSource {
     public static void main(String[] args) {
         String sql = "SELECT t1.hix, t3.pix " +
                 "FROM db_device.tb_product t1, FEWESFS09WERFWEF t2, db_device.thomax " +
-                "WHERE 123 != t1.product_id and t1.product_id = 'hello' and t1.id = t2.tid or t2.cid = db_device.thomax.mid OR db_device.thomax.mid not in (1, 2) AND 1 = 1";
+                "WHERE 123 != t1.product_id and t1.product_id = 'hello' and t1.id = t2.tid or t2.cid = db_device.thomax.mid OR db_device.thomax.mid not in ('1', '2') AND 1 = 1";
 
         /*String sql = "SELECT t1.hix, t3.pix " +
                 "FROM db_device.tb_product t1" +
@@ -119,7 +121,7 @@ public class MultiDataSource {
 
         //Step3 - CONDITION
         parseCondition(query.getWhere(), tableRela, null);
-        if (tableRela.getParent() != null && checkConditionInvalid(tableRela, new HashSet<>())) {
+        if (tableRela.getParent() != null && checkIsInvalid(tableRela, new HashSet<>())) {
             throw new Exception("多个表一定要有互相之间的关联关系");
         }
 
@@ -144,18 +146,24 @@ public class MultiDataSource {
     }
 
     /**
-     * 检测条件是否无效：
+     * 检测语法是否无效：
      * ①2张表之间需要有id相等的关联条件（t1.id = t2.id）
      *
      * @param tableRela 表的关系
+     * @param leftTableAliasList 回溯所需的左表集合
      * @return
      */
-    private static boolean checkConditionInvalid(TableRela tableRela, Set<String> leftTableAliasList) {
+    private static boolean checkIsInvalid(TableRela tableRela, Set<String> leftTableAliasList) throws Exception {
         if (tableRela.getParent() != null) {
-            if (checkConditionInvalid(tableRela.getParent(), leftTableAliasList)) {
+            if (checkIsInvalid(tableRela.getParent(), leftTableAliasList)) {
                 return true;
             }
         } else {
+            String tableName = tableRela.getLeft().getTableName();
+            if (!PROPERTY_TOPIC.equals(tableName) && !EVENT_TOPIC.equals(tableName)) {
+                throw new Exception("SQL语法中FROM的第一张表（主表）一定要为Topic");
+            }
+
             leftTableAliasList.add(getTableAlias(tableRela.getLeft()));
         }
 
@@ -164,13 +172,17 @@ public class MultiDataSource {
         for (TableCondition tableCondition : conditionList) {
             Column leftColumn = tableCondition.getLeft();
             Column rightColumn = tableCondition.getRight();
-            if (tableCondition.getOperator().equals(OperatorType.EQUALITY)) {
+            if (tableCondition.getOperator().equals(OperatorType.EQUAL)) {
                 for (String leftTableAlias : leftTableAliasList) {
                     if ((leftTableAlias.equals(leftColumn.getAlias()) && rightTableAlias.equals(rightColumn.getAlias())) ||
                             (leftTableAlias.equals(rightColumn.getAlias()) && rightTableAlias.equals(leftColumn.getAlias()))) {
                         leftTableAliasList.add(rightColumn.getAlias());
                         return false;
                     }
+                }
+            } else if (tableCondition.getOperator().equals(OperatorType.NOT_EQUAL)) {
+                if (tableCondition.getLeft() != null && tableCondition.getRight() != null) {
+                    throw new Exception("2个表之间的字段不能使用!=进行关联");
                 }
             }
         }
@@ -200,24 +212,74 @@ public class MultiDataSource {
 
         //right table
         Table right = tableRela.getRight();
+        switch (right.getDbType()) {
+            case MYSQL:
+                StringBuilder builder = new StringBuilder();
+                for (TableCondition tableCondition : conditionList) {
+                    ConditionType condition = tableCondition.getCondition();
+                    switch (condition) {
+                        case BOOLEAN_AND:
+                            builder.append(" and ");
+                            break;
+                        case BOOLEAN_OR:
+                            builder.append(" or ");
+                            break;
+                        default:
+                            break;
+                    }
 
-        for (TableCondition tableCondition : conditionList) {
-            if (tableCondition.getExpr() != null) {
-                if (tableCondition.getLeft().getAlias().equals(getTableAlias(right))) {
-
-                } else {//topic or collection
-
+                    if (tableCondition.getCollection() != null) {
+                        if (tableCondition.getLeft().getAlias().equals(getTableAlias(right))) {
+                            switch (tableCondition.getOperator()) {
+                                case EQUAL:
+                                    builder.append(tableCondition.getLeft().getColumn())
+                                            .append("=")
+                                            .append(tableCondition.getCollection().get(0));
+                                    break;
+                                case NOT_EQUAL:
+                                    builder.append(tableCondition.getLeft().getColumn())
+                                            .append("!=")
+                                            .append(tableCondition.getCollection().get(0));
+                                    break;
+                                case IN:
+                                    break;
+                                case NOT_IN:
+                                    break;
+                            }
+                        } else { //topic or collection
+                            switch (tableCondition.getOperator()) {
+                                case EQUAL:
+                                    break;
+                                case NOT_EQUAL:
+                                    break;
+                                case IN:
+                                    break;
+                                case NOT_IN:
+                                    break;
+                            }
+                        }
+                    } else {
+                        switch (condition) {
+                            case BOOLEAN_OR:
+                                break;
+                            case BOOLEAN_AND:
+                                break;
+                        }
+                    }
                 }
-            } else {
-                ConditionType condition = tableCondition.getCondition();
-                switch (condition) {
-                    case BOOLEAN_OR:
-                        break;
-                    case BOOLEAN_AND:
-                        break;
-                }
-            }
+                break;
+            case REDIS:
+                execRedis(conditionList, result);
+                break;
         }
+    }
+
+    private static void execMySQL(List<TableCondition> conditionList, List<Map<String, Object>> result) {
+
+    }
+
+    private static void execRedis(List<TableCondition> conditionList, List<Map<String, Object>> result) {
+
     }
 
     /**
@@ -278,6 +340,8 @@ public class MultiDataSource {
         String alias = tableSource.getAlias();
         Table table = new Table(dbName, tableName, alias);
 
+        //TODO 查询数据资产，然后匹配出是MYSQL还是REDIS
+
         if (isLeft) {
             tableRela.setLeft(table);
         } else {
@@ -314,22 +378,37 @@ public class MultiDataSource {
                 if (left instanceof SQLPropertyExpr && right instanceof SQLPropertyExpr) {
                     tableCondition.setLeft(parseColumn(left, tableRela));
                     tableCondition.setRight(parseColumn(right, tableRela));
+
                     switch (where.getOperator()) {
                         case Equality:
-                            tableCondition.setOperator(OperatorType.EQUALITY);
+                            tableCondition.setOperator(OperatorType.EQUAL);
                             break;
                         case NotEqual:
                             throw new Exception("两个表之间禁止使用!=来进行关联查询");
                     }
+
                     addCondition(tableRela, tableCondition, false);
                 } else {
-                    //使用tableCondition.left存放查询条件内的唯一字段，如果不存在唯一字段那只需要表达式的字符串
+                    //使用tableCondition.left存放查询条件内的唯一字段
+                    SQLExpr valueExpr;
                     if (left instanceof SQLPropertyExpr) {
                         tableCondition.setLeft(parseColumn(left, tableRela));
+                        valueExpr = right;
                     } else if (right instanceof SQLPropertyExpr) {
                         tableCondition.setLeft(parseColumn(right, tableRela));
+                        valueExpr = left;
+                    } else {
+                        throw new Exception("SQL中不支持没有字段的纯逻辑表达式");
                     }
-                    tableCondition.setExpr(where.toString());
+                    switch (where.getOperator()) {
+                        case Equality:
+                            tableCondition.setOperator(OperatorType.EQUAL);
+                            break;
+                        case NotEqual:
+                            tableCondition.setOperator(OperatorType.NOT_EQUAL);
+                    }
+                    tableCondition.setCollection(parseCollection(Collections.singletonList(valueExpr)));
+
                     addCondition(tableRela, tableCondition, true);
                 }
             }
@@ -350,30 +429,57 @@ public class MultiDataSource {
             SQLInListExpr where = (SQLInListExpr) expr;
             tableCondition = new TableCondition();
             Column column = parseColumn(where, tableRela);
+
             //使用tableCondition.left存放查询条件内的唯一字段
             tableCondition.setLeft(column);
-
-            StringBuilder prefix = new StringBuilder();
-            prefix.append(column.getAlias()).append(".").append(column.getColumn()).append(where.isNot() ? " NOT IN (" : " IN (");
-
+            if (where.isNot()) {
+                tableCondition.setOperator(OperatorType.NOT_IN);
+            } else {
+                tableCondition.setOperator(OperatorType.IN);
+            }
             List<SQLExpr> targetList = where.getTargetList();
             if (targetList.size() > 100) {
                 throw new Exception("使用IN ()语句时，括号内的集合数不能超过100");
             }
-            boolean isNumber = targetList.get(0) instanceof SQLIntegerExpr;
-            for (SQLExpr sqlExpr : targetList) {
-                if (isNumber) {
-                    prefix.append(sqlExpr.toString()).append(",");
-                } else {
-                    prefix.append("'").append(sqlExpr.toString()).append("',");
-                }
-            }
-            String exprStr = prefix.replace(prefix.length() - 1, prefix.length(), ")").toString();
-            tableCondition.setExpr(exprStr);
+            tableCondition.setCollection(parseCollection(targetList));
 
             addCondition(tableRela, tableCondition, true);
         } else {
             throw new Exception("出现不支持的语法");
+        }
+    }
+
+    /**
+     * 解析表达式集合
+     *
+     * @param targetList 表达式集合
+     * @return
+     */
+    private static List<Object> parseCollection(List<SQLExpr> targetList) {
+        List<Object> collection;
+        if (targetList.size() == 1) {
+            collection = Collections.singletonList(parseValue(targetList.get(0)));
+        } else {
+            collection = new ArrayList<>();
+            for (SQLExpr sqlExpr : targetList) {
+                collection.add(parseValue(sqlExpr));
+            }
+        }
+
+        return collection;
+    }
+
+    /**
+     * 解析表达式中的值
+     *
+     * @param expr 表达式
+     * @return
+     */
+    private static Object parseValue(SQLExpr expr) {
+        if (expr instanceof SQLIntegerExpr) {
+           return ((SQLIntegerExpr) expr).getNumber();
+        } else {
+           return ((SQLCharExpr) expr).getText();
         }
     }
 

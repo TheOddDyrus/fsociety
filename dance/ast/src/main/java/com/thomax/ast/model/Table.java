@@ -8,6 +8,8 @@ public class Table {
 
     private String alias;
 
+    private DbType dbType;
+
     public Table(String dbName, String tableName, String alias) {
         this.dbName = dbName;
         this.tableName = tableName;
@@ -38,4 +40,11 @@ public class Table {
         this.alias = alias;
     }
 
+    public DbType getDbType() {
+        return dbType;
+    }
+
+    public void setDbType(DbType dbType) {
+        this.dbType = dbType;
+    }
 }
