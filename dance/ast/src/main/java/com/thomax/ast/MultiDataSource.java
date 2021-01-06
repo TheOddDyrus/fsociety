@@ -87,20 +87,20 @@ public class MultiDataSource {
      * 解析SQL，进行多数据源关联查询
      *
      * 支持的关键字：SELECT FROM WHERE LEFT RIGHT INNER JOIN ON NOT IN AND OR
-     * 支持的符号： ( ) , = != ''
+     * 支持的符号： ( ) , = != '' > < >= <=
      * 注意事项：目前括号只支持IN ()的语法，不支持复合条件语句比如：((x = y) or (a = b))
      *
      * @param sql
      * @param topicData 主表数据源
      */
     public static  List<Map<String, Object>> parseSQL(String sql, HashMap<String, Object> topicData) throws Exception {
-        //Parse
+        //get Druid AST
         List<SQLStatement> statementList = SQLUtils.parseStatements(sql, JdbcConstants.MYSQL); //这步解析大概耗时500ms（如果把tableRela转JSON，解析JSON时间差不多）
         SQLSelectStatement statement = (SQLSelectStatement) statementList.get(0);
         SQLSelect sqlSelect = (SQLSelect) statement.getChildren().get(0);
         MySqlSelectQueryBlock query = (MySqlSelectQueryBlock) sqlSelect.getQuery();
 
-        //Business AST
+        //new Business AST
         TableRela tableRela = new TableRela();
 
         //Step1 - TABLE
@@ -121,6 +121,7 @@ public class MultiDataSource {
 
         //Step3 - CONDITION
         parseCondition(query.getWhere(), tableRela, null);
+        ////////////////////////////////////////////////////////////////////////////////////////////分隔
         if (tableRela.getParent() != null && checkIsInvalid(tableRela, new HashSet<>())) {
             throw new Exception("多个表一定要有互相之间的关联关系");
         }
@@ -198,11 +199,24 @@ public class MultiDataSource {
      * @return
      */
     private static void execAST(TableRela tableRela, List<Map<String, Object>> result) {
-        Table left = null;
         if (tableRela.getParent() != null) {
             execAST(tableRela.getParent(), result);
         } else {
-            left = tableRela.getLeft();
+            Table left = tableRela.getLeft();
+            List<Column> columnList = tableRela.getColumnList();
+            List<Column> topicColumnList = new ArrayList<>();
+            for (Column column : columnList) {
+                if (column.getAlias().equals(getTableAlias(left))) {
+                    topicColumnList.add(column);
+                }
+            }
+            Map<String, Object> topicData = result.get(0);
+            Map<String, Object> newData = new LinkedHashMap<>();
+            for (Column column : topicColumnList) {
+                if (topicData.containsKey(column.getColumn())) {
+                    //newData.put()
+                }
+            }
         }
 
         List<Column> columnList = tableRela.getColumnList();
@@ -214,15 +228,26 @@ public class MultiDataSource {
         Table right = tableRela.getRight();
         switch (right.getDbType()) {
             case MYSQL:
-                StringBuilder builder = new StringBuilder();
+                StringBuilder selectBuilder = new StringBuilder("select ");
+
+                for (Column column : columnList) {
+                    if (column.getAlias().equals(getTableAlias(right))) {
+                        selectBuilder.append(column.getColumn()).append(",");
+                    }
+                }
+                if (selectBuilder.charAt(selectBuilder.length() - 1) == ',') {
+                    selectBuilder.deleteCharAt(selectBuilder.length() - 1);
+                }
+                selectBuilder.append(" ");
+
                 for (TableCondition tableCondition : conditionList) {
                     ConditionType condition = tableCondition.getCondition();
                     switch (condition) {
                         case BOOLEAN_AND:
-                            builder.append(" and ");
+                            selectBuilder.append(" and ");
                             break;
                         case BOOLEAN_OR:
-                            builder.append(" or ");
+                            selectBuilder.append(" or ");
                             break;
                         default:
                             break;
@@ -232,12 +257,12 @@ public class MultiDataSource {
                         if (tableCondition.getLeft().getAlias().equals(getTableAlias(right))) {
                             switch (tableCondition.getOperator()) {
                                 case EQUAL:
-                                    builder.append(tableCondition.getLeft().getColumn())
+                                    selectBuilder.append(tableCondition.getLeft().getColumn())
                                             .append("=")
                                             .append(tableCondition.getCollection().get(0));
                                     break;
                                 case NOT_EQUAL:
-                                    builder.append(tableCondition.getLeft().getColumn())
+                                    selectBuilder.append(tableCondition.getLeft().getColumn())
                                             .append("!=")
                                             .append(tableCondition.getCollection().get(0));
                                     break;
