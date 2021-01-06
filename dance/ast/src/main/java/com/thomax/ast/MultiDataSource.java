@@ -21,6 +21,7 @@ import com.thomax.ast.model.Column;
 import com.thomax.ast.model.ConditionType;
 import com.thomax.ast.model.OperatorType;
 import com.thomax.ast.model.RelaType;
+import com.thomax.ast.model.Result;
 import com.thomax.ast.model.Table;
 import com.thomax.ast.model.TableCondition;
 import com.thomax.ast.model.TableRela;
@@ -57,7 +58,7 @@ public class MultiDataSource {
     public static void main(String[] args) {
         String sql = "SELECT t1.hix, t3.pix " +
                 "FROM db_device.tb_product t1, FEWESFS09WERFWEF t2, db_device.thomax " +
-                "WHERE 123 != t1.product_id and t1.product_id = 'hello' and t1.id = t2.tid or t2.cid = db_device.thomax.mid OR db_device.thomax.mid not in ('1', '2') AND 1 = 1";
+                "WHERE t1.product_id > 12 and t1.product_id = 'hello' and t1.id = t2.tid or t2.cid = db_device.thomax.mid OR db_device.thomax.mid not in ('1', '2') AND 1 = 1";
 
         /*String sql = "SELECT t1.hix, t3.pix " +
                 "FROM db_device.tb_product t1" +
@@ -76,7 +77,7 @@ public class MultiDataSource {
         topicData.put("data", propertyData);
 
         try {
-            List<Map<String, Object>> result = parseSQL(sql, topicData);
+            Result result = parseSQL(sql, topicData);
             System.out.println(result);
         } catch (Exception e) {
             System.out.println("解析SQL过程发生异常：" + e.getMessage());
@@ -87,13 +88,13 @@ public class MultiDataSource {
      * 解析SQL，进行多数据源关联查询
      *
      * 支持的关键字：SELECT FROM WHERE LEFT RIGHT INNER JOIN ON NOT IN AND OR
-     * 支持的符号： ( ) , = != '' > < >= <=
+     * 支持的符号： ( ) , = != ''
      * 注意事项：目前括号只支持IN ()的语法，不支持复合条件语句比如：((x = y) or (a = b))
      *
      * @param sql
      * @param topicData 主表数据源
      */
-    public static  List<Map<String, Object>> parseSQL(String sql, HashMap<String, Object> topicData) throws Exception {
+    public static Result parseSQL(String sql, Map<String, Object> topicData) throws Exception {
         //get Druid AST
         List<SQLStatement> statementList = SQLUtils.parseStatements(sql, JdbcConstants.MYSQL); //这步解析大概耗时500ms（如果把tableRela转JSON，解析JSON时间差不多）
         SQLSelectStatement statement = (SQLSelectStatement) statementList.get(0);
@@ -121,18 +122,16 @@ public class MultiDataSource {
 
         //Step3 - CONDITION
         parseCondition(query.getWhere(), tableRela, null);
-        ////////////////////////////////////////////////////////////////////////////////////////////分隔
         if (tableRela.getParent() != null && checkIsInvalid(tableRela, new HashSet<>())) {
             throw new Exception("多个表一定要有互相之间的关联关系");
         }
 
         //Step4 - EXECUTE
-        List<Map<String, Object>> result = new ArrayList<>();
-        result.add(topicData);
-        execAST(tableRela, result);
+        Result result = new Result();
+        execAST(tableRela, topicData, result);
 
         //Step5 - FILTER
-        List<Map<String, Object>> finalResult = new ArrayList<>(result.size());
+       /* List<Map<String, Object>> finalResult = new ArrayList<>(result.size());
         for (Column selectColumn : selectColumnList) {
             Map<String, Object> newRow = new LinkedHashMap<>();
             for (Map<String, Object> row : result) {
@@ -141,9 +140,9 @@ public class MultiDataSource {
                 }
             }
             finalResult.add(newRow);
-        }
+        }*/
 
-        return finalResult;
+        return result;
     }
 
     /**
@@ -198,9 +197,9 @@ public class MultiDataSource {
      * @param topicData 主表数据源
      * @return
      */
-    private static void execAST(TableRela tableRela, List<Map<String, Object>> result) {
+    private static void execAST(TableRela tableRela, Map<String, Object> topicData, Result result) {
         if (tableRela.getParent() != null) {
-            execAST(tableRela.getParent(), result);
+            execAST(tableRela.getParent(), topicData, result);
         } else {
             Table left = tableRela.getLeft();
             List<Column> columnList = tableRela.getColumnList();
@@ -210,11 +209,13 @@ public class MultiDataSource {
                     topicColumnList.add(column);
                 }
             }
-            Map<String, Object> topicData = result.get(0);
             Map<String, Object> newData = new LinkedHashMap<>();
             for (Column column : topicColumnList) {
                 if (topicData.containsKey(column.getColumn())) {
-                    //newData.put()
+                    newData.put(column.getColumn(), topicData.get(column.getColumn()));
+                } else {
+                    Map<String, Object> data = (Map) topicData.get("data");
+                    newData.put(column.getColumn(), data.get(column.getColumn()));
                 }
             }
         }
@@ -235,26 +236,29 @@ public class MultiDataSource {
                         selectBuilder.append(column.getColumn()).append(",");
                     }
                 }
-                if (selectBuilder.charAt(selectBuilder.length() - 1) == ',') {
-                    selectBuilder.deleteCharAt(selectBuilder.length() - 1);
-                }
+                selectBuilder.deleteCharAt(selectBuilder.length() - 1);
                 selectBuilder.append(" ");
 
+                boolean isFristAnd = true;
                 for (TableCondition tableCondition : conditionList) {
-                    ConditionType condition = tableCondition.getCondition();
-                    switch (condition) {
-                        case BOOLEAN_AND:
-                            selectBuilder.append(" and ");
-                            break;
-                        case BOOLEAN_OR:
-                            selectBuilder.append(" or ");
-                            break;
-                        default:
-                            break;
+                    if (isFristAnd) {
+                        isFristAnd = false;
+                    } else {
+                        ConditionType condition = tableCondition.getCondition();
+                        switch (condition) {
+                            case BOOLEAN_AND:
+                                selectBuilder.append(" and ");
+                                break;
+                            case BOOLEAN_OR:
+                                selectBuilder.append(" or ");
+                                break;
+                        }
                     }
 
                     if (tableCondition.getCollection() != null) {
                         if (tableCondition.getLeft().getAlias().equals(getTableAlias(right))) {
+                            selectBuilder.append(tableCondition.getLeft().getColumn())
+                                    .append(" ");
                             switch (tableCondition.getOperator()) {
                                 case EQUAL:
                                     selectBuilder.append(tableCondition.getLeft().getColumn())
@@ -267,8 +271,28 @@ public class MultiDataSource {
                                             .append(tableCondition.getCollection().get(0));
                                     break;
                                 case IN:
+                                    selectBuilder.append("in (");
+                                    List<Object> collection = tableCondition.getCollection();
+                                    boolean isNumber = collection.get(0) instanceof Number;
+                                    for (Object o : collection) {
+                                        if (isNumber) {
+                                            selectBuilder.append(o.toString()).append(",");
+                                        }
+                                    }
+                                    selectBuilder.deleteCharAt(selectBuilder.length() - 1);
+                                    selectBuilder.append(")");
                                     break;
                                 case NOT_IN:
+                                    selectBuilder.append("not in (");
+                                    collection = tableCondition.getCollection();
+                                    isNumber = collection.get(0) instanceof Number;
+                                    for (Object o : collection) {
+                                        if (isNumber) {
+                                            selectBuilder.append(o.toString()).append(",");
+                                        }
+                                    }
+                                    selectBuilder.deleteCharAt(selectBuilder.length() - 1);
+                                    selectBuilder.append(")");
                                     break;
                             }
                         } else { //topic or collection
@@ -284,27 +308,14 @@ public class MultiDataSource {
                             }
                         }
                     } else {
-                        switch (condition) {
-                            case BOOLEAN_OR:
-                                break;
-                            case BOOLEAN_AND:
-                                break;
-                        }
+                        //
                     }
                 }
                 break;
             case REDIS:
-                execRedis(conditionList, result);
+                //execRedis(conditionList, result);
                 break;
         }
-    }
-
-    private static void execMySQL(List<TableCondition> conditionList, List<Map<String, Object>> result) {
-
-    }
-
-    private static void execRedis(List<TableCondition> conditionList, List<Map<String, Object>> result) {
-
     }
 
     /**
