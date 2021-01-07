@@ -17,6 +17,7 @@ import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.alibaba.druid.sql.ast.statement.SQLTableSource;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlSelectQueryBlock;
 import com.alibaba.druid.util.JdbcConstants;
+import com.thomax.ast.exception.NoDataException;
 import com.thomax.ast.model.Column;
 import com.thomax.ast.model.ConditionType;
 import com.thomax.ast.model.OperatorType;
@@ -25,12 +26,21 @@ import com.thomax.ast.model.Result;
 import com.thomax.ast.model.Table;
 import com.thomax.ast.model.TableCondition;
 import com.thomax.ast.model.TableRela;
+import com.thomax.ast.util.DBUtils;
 
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,6 +89,8 @@ public class MultiDataSource {
         try {
             Result result = parseSQL(sql, topicData);
             System.out.println(result);
+        } catch (NoDataException nde) {
+            System.out.println("没有数据查询出来");
         } catch (Exception e) {
             System.out.println("解析SQL过程发生异常：" + e.getMessage());
         }
@@ -87,7 +99,7 @@ public class MultiDataSource {
     /**
      * 解析SQL，进行多数据源关联查询
      *
-     * 支持的关键字：SELECT FROM WHERE LEFT RIGHT INNER JOIN ON NOT IN AND OR
+     * 支持的关键字：SELECT FROM WHERE LEFT INNER JOIN ON NOT IN AND OR
      * 支持的符号： ( ) , = != ''
      * 注意事项：目前括号只支持IN ()的语法，不支持复合条件语句比如：((x = y) or (a = b))
      *
@@ -195,32 +207,38 @@ public class MultiDataSource {
      *
      * @param tableRela 表的关系
      * @param topicData 主表数据源
+     * @param result 结果集
      * @return
      */
-    private static void execAST(TableRela tableRela, Map<String, Object> topicData, Result result) {
+    private static void execAST(TableRela tableRela, Map<String, Object> topicData, Result result) throws Exception {
+        List<Column> rightColumnList;
         if (tableRela.getParent() != null) {
             execAST(tableRela.getParent(), topicData, result);
+            rightColumnList = tableRela.getColumnList();
         } else {
+            //get topic result
             Table left = tableRela.getLeft();
-            List<Column> columnList = tableRela.getColumnList();
-            List<Column> topicColumnList = new ArrayList<>();
-            for (Column column : columnList) {
+            List<Column> topicColumnList = new LinkedList<>();
+            rightColumnList = new LinkedList<>();
+            for (Column column : tableRela.getColumnList()) {
                 if (column.getAlias().equals(getTableAlias(left))) {
                     topicColumnList.add(column);
-                }
-            }
-            Map<String, Object> newData = new LinkedHashMap<>();
-            for (Column column : topicColumnList) {
-                if (topicData.containsKey(column.getColumn())) {
-                    newData.put(column.getColumn(), topicData.get(column.getColumn()));
                 } else {
-                    Map<String, Object> data = (Map) topicData.get("data");
-                    newData.put(column.getColumn(), data.get(column.getColumn()));
+                    rightColumnList.add(column);
                 }
             }
+            List<Object> firstRow = new LinkedList<>();
+            for (Column column : topicColumnList) {
+                result.addColumn(column);
+                if (topicData.containsKey(column.getColumn())) {
+                    firstRow.add(topicData.get(column.getColumn()));
+                } else {
+                    Map<String, Object> data = (Map<String, Object>) topicData.get("data");
+                    firstRow.add(data.get(column.getColumn()));
+                }
+            }
+            result.addRow(firstRow);
         }
-
-        List<Column> columnList = tableRela.getColumnList();
 
         //condition
         List<TableCondition> conditionList = tableRela.getConditionList();
@@ -231,32 +249,33 @@ public class MultiDataSource {
             case MYSQL:
                 StringBuilder selectBuilder = new StringBuilder("select ");
 
-                for (Column column : columnList) {
-                    if (column.getAlias().equals(getTableAlias(right))) {
-                        selectBuilder.append(column.getColumn()).append(",");
-                    }
+                for (Column column : rightColumnList) {
+                    selectBuilder.append(column.getColumn()).append(",");
                 }
                 selectBuilder.deleteCharAt(selectBuilder.length() - 1);
                 selectBuilder.append(" ");
 
                 boolean isFristAnd = true;
+                boolean isExistPreviousExpr = false;
+                List<TableCondition> twoTableCondition = new ArrayList<>(); //t1.id = t2.id需要等计算完单字段表达式后再计算
+                //第一步计算：单字段表达式
                 for (TableCondition tableCondition : conditionList) {
-                    if (isFristAnd) {
-                        isFristAnd = false;
-                    } else {
-                        ConditionType condition = tableCondition.getCondition();
-                        switch (condition) {
-                            case BOOLEAN_AND:
-                                selectBuilder.append(" and ");
-                                break;
-                            case BOOLEAN_OR:
-                                selectBuilder.append(" or ");
-                                break;
-                        }
-                    }
-
                     if (tableCondition.getCollection() != null) {
-                        if (tableCondition.getLeft().getAlias().equals(getTableAlias(right))) {
+                        if (tableCondition.getLeft().getAlias().equals(getTableAlias(right))) { //right table condition
+                            if (isFristAnd) {
+                                isFristAnd = false;
+                            } else {
+                                ConditionType condition = tableCondition.getCondition();
+                                switch (condition) {
+                                    case BOOLEAN_AND:
+                                        selectBuilder.append(" and ");
+                                        break;
+                                    case BOOLEAN_OR:
+                                        selectBuilder.append(" or ");
+                                        break;
+                                }
+                            }
+
                             selectBuilder.append(tableCondition.getLeft().getColumn())
                                     .append(" ");
                             switch (tableCondition.getOperator()) {
@@ -295,27 +314,183 @@ public class MultiDataSource {
                                     selectBuilder.append(")");
                                     break;
                             }
-                        } else { //topic or collection
-                            switch (tableCondition.getOperator()) {
-                                case EQUAL:
-                                    break;
-                                case NOT_EQUAL:
-                                    break;
-                                case IN:
-                                    break;
-                                case NOT_IN:
-                                    break;
+
+                            isExistPreviousExpr = true;
+                        } else { //result condition
+                            int columnIndex = getColumnIndex(tableCondition.getLeft(), result);
+
+                            Iterator<List<Object>> rowIterator = result.getRowList().iterator();
+                            while (rowIterator.hasNext()) {
+                                List<Object> row = rowIterator.next();
+                                switch (tableCondition.getOperator()) {
+                                    case EQUAL:
+                                        if (!row.get(columnIndex).equals(tableCondition.getCollection().get(0))) {
+                                            rowIterator.remove();
+                                        }
+                                        break;
+                                    case NOT_EQUAL:
+                                        if (row.get(columnIndex).equals(tableCondition.getCollection().get(0))) {
+                                            rowIterator.remove();
+                                        }
+                                        break;
+                                    case IN:
+                                        Object value = row.get(columnIndex);
+                                        boolean isExist = false;
+                                        for (Object o : tableCondition.getCollection()) {
+                                            if (value.equals(o)) {
+                                                isExist = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!isExist) {
+                                            rowIterator.remove();
+                                        }
+                                        break;
+                                    case NOT_IN:
+                                        value = row.get(columnIndex);
+                                        isExist = false;
+                                        for (Object o : tableCondition.getCollection()) {
+                                            if (value.equals(o)) {
+                                                isExist = true;
+                                                break;
+                                            }
+                                        }
+                                        if (isExist) {
+                                            rowIterator.remove();
+                                        }
+                                        break;
+                                }
+                            }
+
+                            if (result.getRowList().size() == 0) {
+                                throw new NoDataException();
                             }
                         }
                     } else {
-                        //
+                        twoTableCondition.add(tableCondition);
                     }
                 }
+
+                //第二步计算：两表关联表达式
+                for (TableCondition tableCondition : twoTableCondition) {
+                    if (isExistPreviousExpr) {
+                        ConditionType condition = tableCondition.getCondition();
+                        switch (condition) {
+                            case BOOLEAN_AND:
+                                selectBuilder.append(" and ");
+                                break;
+                            case BOOLEAN_OR:
+                                selectBuilder.append(" or ");
+                                break;
+                        }
+                    } else {
+                        isExistPreviousExpr = true;
+                    }
+
+                    if (tableCondition.getLeft().getAlias().equals(getTableAlias(right))) {
+                        selectBuilder.append(tableCondition.getLeft().getColumn());
+                    } else {
+                        selectBuilder.append(tableCondition.getRight().getColumn());
+                    }
+                    selectBuilder.append(" in ("); //目前2表之间只能使用t1.id = t2.id来关联
+                    for (Object value : tableCondition.getCollection()) {
+                        selectBuilder.append(value).append(",");
+                    }
+                    selectBuilder.deleteCharAt(selectBuilder.length() - 1);
+                    selectBuilder.append(")");
+                }
+
+                execMySQL(selectBuilder.toString(), rightColumnList, tableRela.getRela(), twoTableCondition, result);
                 break;
             case REDIS:
                 //execRedis(conditionList, result);
                 break;
         }
+    }
+
+    private static void execMySQL(String sql, List<Column> rightColumnList, RelaType rela, List<TableCondition> twoTableCondition, Result result) throws Exception {
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            connection = DBUtils.getConnection();
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+
+            for (Column column : rightColumnList) {
+                result.addColumn(column);
+            }
+
+            for (TableCondition tableCondition : twoTableCondition) {
+                Column resultColumn = null;
+                Column rightTableColumn = null;
+                Column left = tableCondition.getLeft();
+                Column right = tableCondition.getRight();
+                for (Column rightColumn : rightColumnList) {
+                    if (left.getAlias().equals(rightColumn.getAlias()) && left.getColumn().equals(rightColumn.getColumn())) {
+                        resultColumn = right;
+                        rightTableColumn = left;
+
+                    }
+                    if (right.getAlias().equals(rightColumn.getAlias()) && right.getColumn().equals(rightColumn.getColumn())) {
+                        resultColumn = left;
+                        rightTableColumn = right;
+                    }
+                }
+
+                //merge collection
+                int columnIndex = getColumnIndex(resultColumn, result);
+                Iterator<List<Object>> rowIterator = result.getRowList().iterator();
+                while (rowIterator.hasNext()) {
+                    List<Object> row = rowIterator.next();
+                    resultSet.beforeFirst();
+                    boolean isEqual = false;
+                    while (resultSet.next()) {
+                        Object value = resultSet.getObject(rightTableColumn.getColumn());
+                        if (row.get(columnIndex).equals(value)) {
+                            for (Column column : rightColumnList) {
+                                row.add(resultSet.getObject(column.getColumn()));
+                            }
+                            isEqual = true;
+                        }
+                    }
+                    switch (rela) {
+                        case NONE:
+                        case INNER_JOIN:
+                            if (!isEqual) {
+                                rowIterator.remove();
+                            }
+                            break;
+                        case LEFT_JOIN:
+                            if (!isEqual) {
+                                for (List<Object> finalRow : result.getRowList()) {
+                                    for (int i = 0; i < rightColumnList.size(); i++) {
+                                        finalRow.add(null);
+                                    }
+                                }
+                            }
+                            break;
+                    }
+
+                }
+            }
+        } catch (SQLException e) {
+            throw new Exception("执行MySQL查询时发生异常：" + e.getMessage());
+        } finally {
+            DBUtils.close(statement, connection, resultSet);
+        }
+    }
+
+    private static int getColumnIndex(Column indexColumn, Result result) {
+        int index = 0;
+        for (Column column : result.getColumnList()) {
+            if (indexColumn.getAlias().equals(column.getAlias()) && indexColumn.getColumn().equals(column.getColumn())) {
+                break;
+            }
+            index++;
+        }
+
+        return index;
     }
 
     /**
@@ -350,14 +525,12 @@ public class MultiDataSource {
                 tableRela.setRela(RelaType.LEFT_JOIN);
                 parseCondition(tables.getCondition(),  tableRela, null);
                 break;
-            case RIGHT_OUTER_JOIN: //RIGHT JOIN
-                tableRela.setRela(RelaType.RIGHT_JOIN);
-                parseCondition(tables.getCondition(), tableRela, null);
-                break;
             case INNER_JOIN: //INNER JOIN
                 tableRela.setRela(RelaType.INNER_JOIN);
                 parseCondition(tables.getCondition(), tableRela, null);
                 break;
+            default:
+                throw new Exception("不支持这种表的关联关系：" + tables.getJoinType().toString());
         }
     }
 

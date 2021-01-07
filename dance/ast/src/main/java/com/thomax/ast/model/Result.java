@@ -1,26 +1,36 @@
 package com.thomax.ast.model;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class Result {
 
-    private List<String> columnList;
+    private List<Column> columnList;
 
-    private List<List<Object>> dataList;
+    private List<List<Object>> rowList;
 
-    public List<String> getColumnList() {
+    public void addColumn(Column column) {
+        if (columnList == null) {
+            columnList = new LinkedList<>();
+        }
+
+        columnList.add(column);
+    }
+
+    public List<Column> getColumnList() {
         return columnList;
     }
 
-    public void setColumnList(List<String> columnList) {
-        this.columnList = columnList;
+    public void addRow(List<Object> row) {
+        if (rowList == null) {
+            rowList = new LinkedList<>();
+        }
+
+        rowList.add(row);
     }
 
-    public List<List<Object>> getDataList() {
-        return dataList;
+    public List<List<Object>> getRowList() {
+        return rowList;
     }
 
-    public void setDataList(List<List<Object>> dataList) {
-        this.dataList = dataList;
-    }
 }

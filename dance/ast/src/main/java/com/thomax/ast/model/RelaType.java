@@ -6,8 +6,6 @@ public enum RelaType {
 
     LEFT_JOIN,
 
-    RIGHT_JOIN,
-
     INNER_JOIN
 
 }
