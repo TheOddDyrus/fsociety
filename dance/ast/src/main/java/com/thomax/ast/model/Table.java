@@ -1,5 +1,7 @@
 package com.thomax.ast.model;
 
+import java.util.Properties;
+
 public class Table {
 
     private String dbName;
@@ -9,6 +11,8 @@ public class Table {
     private String alias;
 
     private DbType dbType;
+
+    private Properties baseInfo;
 
     public Table(String dbName, String tableName, String alias) {
         this.dbName = dbName;
@@ -47,4 +51,13 @@ public class Table {
     public void setDbType(DbType dbType) {
         this.dbType = dbType;
     }
+
+    public Properties getBaseInfo() {
+        return baseInfo;
+    }
+
+    public void setBaseInfo(Properties baseInfo) {
+        this.baseInfo = baseInfo;
+    }
+
 }

@@ -20,29 +20,28 @@ import com.alibaba.druid.util.JdbcConstants;
 import com.thomax.ast.exception.NoDataException;
 import com.thomax.ast.model.Column;
 import com.thomax.ast.model.ConditionType;
+import com.thomax.ast.model.DbType;
 import com.thomax.ast.model.OperatorType;
 import com.thomax.ast.model.RelaType;
 import com.thomax.ast.model.Result;
 import com.thomax.ast.model.Table;
 import com.thomax.ast.model.TableCondition;
 import com.thomax.ast.model.TableRela;
-import com.thomax.ast.util.DBUtils;
+import com.thomax.ast.util.MySQLUtil;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -67,8 +66,9 @@ public class MultiDataSource {
 
     public static void main(String[] args) {
         String sql = "SELECT t1.hix, t3.pix " +
-                "FROM db_device.tb_product t1, FEWESFS09WERFWEF t2, db_device.thomax " +
-                "WHERE t1.product_id > 12 and t1.product_id = 'hello' and t1.id = t2.tid or t2.cid = db_device.thomax.mid OR db_device.thomax.mid not in ('1', '2') AND 1 = 1";
+                "FROM a.b.c.tb_product t1, FEWESFS09WERFWEF t2, db_device.thomax, 中国 " +
+                "WHERE t1.product_id > 12 and t1.product_id = 'hello' and t1.id = t2.tid or t2.cid = db_device.thomax.mid " +
+                "OR db_device.thomax.mid not in ('1', '2') AND 1 = 1 AND 中国.aaa = 123";
 
         /*String sql = "SELECT t1.hix, t3.pix " +
                 "FROM db_device.tb_product t1" +
@@ -143,16 +143,37 @@ public class MultiDataSource {
         execAST(tableRela, topicData, result);
 
         //Step5 - FILTER
-       /* List<Map<String, Object>> finalResult = new ArrayList<>(result.size());
-        for (Column selectColumn : selectColumnList) {
-            Map<String, Object> newRow = new LinkedHashMap<>();
-            for (Map<String, Object> row : result) {
-                if (row.containsValue(selectColumn.getAlias())) {
-                    newRow.put(selectColumn.getAlias(), row.get(selectColumn.getAlias()));
+        List<Column> columnList = result.getColumnList();
+        List<Integer> deleteIndexList = new ArrayList<>();
+        int deleteIndex = 0;
+        Iterator<Column> columnIterator = columnList.iterator();
+        while (columnIterator.hasNext()) {
+            Column column = columnIterator.next();
+            boolean isSelect = false;
+            for (Column selectColumn : selectColumnList) {
+                if (selectColumn.getAlias().equals(column.getAlias()) && selectColumn.getColumn().equals(column.getColumn())) {
+                    isSelect = true;
+                    break;
                 }
             }
-            finalResult.add(newRow);
-        }*/
+            if (!isSelect) {
+                columnIterator.remove();
+                deleteIndexList.add(deleteIndex);
+            }
+            deleteIndex++;
+        }
+        for (List<Object> row : result.getRowList()) {
+            int cursor = 0;
+            for (Integer index : deleteIndexList) {
+                Iterator<Object> rowIterator = row.iterator();
+                while (rowIterator.hasNext()) {
+                    if (cursor == index) {
+                        rowIterator.remove();
+                    }
+                    cursor++;
+                }
+            }
+        }
 
         return result;
     }
@@ -400,20 +421,20 @@ public class MultiDataSource {
                     selectBuilder.append(")");
                 }
 
-                execMySQL(selectBuilder.toString(), rightColumnList, tableRela.getRela(), twoTableCondition, result);
+                execMySQL(selectBuilder.toString(), rightColumnList, tableRela.getRela(), twoTableCondition, result, right.getBaseInfo());
                 break;
             case REDIS:
-                //execRedis(conditionList, result);
+                //
                 break;
         }
     }
 
-    private static void execMySQL(String sql, List<Column> rightColumnList, RelaType rela, List<TableCondition> twoTableCondition, Result result) throws Exception {
+    private static void execMySQL(String sql, List<Column> rightColumnList, RelaType rela, List<TableCondition> twoTableCondition, Result result, Properties prop) throws Exception {
         Connection connection = null;
         Statement statement = null;
         ResultSet resultSet = null;
         try {
-            connection = DBUtils.getConnection();
+            connection = MySQLUtil.getConnection(prop);
             statement = connection.createStatement();
             resultSet = statement.executeQuery(sql);
 
@@ -477,10 +498,17 @@ public class MultiDataSource {
         } catch (SQLException e) {
             throw new Exception("执行MySQL查询时发生异常：" + e.getMessage());
         } finally {
-            DBUtils.close(statement, connection, resultSet);
+            MySQLUtil.close(statement, connection, resultSet);
         }
     }
 
+    /**
+     * 获得字段在结果集的下标
+     *
+     * @param indexColumn 字段
+     * @param result 结果集
+     * @return
+     */
     private static int getColumnIndex(Column indexColumn, Result result) {
         int index = 0;
         for (Column column : result.getColumnList()) {
@@ -549,7 +577,11 @@ public class MultiDataSource {
         String alias = tableSource.getAlias();
         Table table = new Table(dbName, tableName, alias);
 
-        //TODO 查询数据资产，然后匹配出是MYSQL还是REDIS
+        //目前多数据源只支持MySQL类型
+        table.setDbType(DbType.MYSQL);
+        Properties prop = new Properties();
+        //TODO 表信息补全
+        table.setBaseInfo(prop);
 
         if (isLeft) {
             tableRela.setLeft(table);
