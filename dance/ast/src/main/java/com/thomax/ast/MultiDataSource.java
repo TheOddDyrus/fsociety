@@ -100,6 +100,7 @@ public class MultiDataSource {
 
         try {
             Result result = execSQL(sql3, topicData);
+            System.out.println(">>查询结果：" + JSON.toJSONString(result));
         } catch (NoDataException nde) {
             System.out.println("没有数据查询出来");
         } catch (Exception e) {
@@ -133,7 +134,7 @@ public class MultiDataSource {
 
         start = System.currentTimeMillis();
         //get Druid AST
-        List<SQLStatement> statementList = SQLUtils.parseStatements(sql, JdbcConstants.MYSQL); //这步解析大概耗时500ms（如果把tableRela转JSON，解析JSON时间差不多）
+        List<SQLStatement> statementList = SQLUtils.parseStatements(sql, JdbcConstants.MYSQL); //这步解析大概耗时200~500ms
         SQLSelectStatement statement = (SQLSelectStatement) statementList.get(0);
         SQLSelect sqlSelect = (SQLSelect) statement.getChildren().get(0);
         MySqlSelectQueryBlock query = (MySqlSelectQueryBlock) sqlSelect.getQuery();
@@ -162,17 +163,17 @@ public class MultiDataSource {
         //Step3 - CONDITION
         parseCondition(query.getWhere(), tableRela, null);
 
-        //Step4 - VERIFY
+        //Step4 - LAST VERIFY
         String invalidTable = checkInvalidTable(tableRela, new HashSet<>());
         if (invalidTable != null && invalidTable.length() > 0) {
             throw new Exception("表: " + invalidTable + " 和其他表之间缺少关联关系");
         }
         System.out.println(">>生成数据流转AST耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
 
-        String s = JSON.toJSONString(tableRela);
-        System.out.println(">>生成数据流转AST转JSON：" + s);
+        String tableRelaJson = JSON.toJSONString(tableRela);
+        System.out.println(">>生成数据流转AST转JSON：" + tableRelaJson);
         start = System.currentTimeMillis();
-        TableRela newObject = (TableRela) JSON.parseObject(s, TableRela.class);
+        tableRela = JSON.parseObject(tableRelaJson, TableRela.class);
         System.out.println(">>数据流转AST的JSON转回对象耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
 
         start = System.currentTimeMillis();
@@ -226,8 +227,6 @@ public class MultiDataSource {
             }
         }
         System.out.println(">>使用AST执行多数据源操作耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
-
-        System.out.println(">>查询结果：" + JSON.toJSONString(result));
 
         return result;
     }

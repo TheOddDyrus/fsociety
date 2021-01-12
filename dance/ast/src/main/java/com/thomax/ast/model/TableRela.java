@@ -53,6 +53,10 @@ public class TableRela {
         return columnList;
     }
 
+    public void setColumnList(List<Column> columnList) {
+        this.columnList = columnList;
+    }
+
     public void addColumn(Column newColumn) {
         if (columnList == null) {
             columnList = new ArrayList<>();
@@ -71,6 +75,10 @@ public class TableRela {
 
     public List<TableCondition> getConditionList() {
         return conditionList;
+    }
+
+    public void setConditionList(List<TableCondition> conditionList) {
+        this.conditionList = conditionList;
     }
 
     public void addCondition(TableCondition tableCondition) {

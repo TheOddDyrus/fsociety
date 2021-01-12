@@ -21,6 +21,10 @@ public class Result {
         return columnList;
     }
 
+    public void setColumnList(List<Column> columnList) {
+        this.columnList = columnList;
+    }
+
     public void addRow(List<Object> row) {
         if (rowList == null) {
             rowList = new LinkedList<>();
@@ -31,6 +35,10 @@ public class Result {
 
     public List<List<Object>> getRowList() {
         return rowList;
+    }
+
+    public void setRowList(List<List<Object>> rowList) {
+        this.rowList = rowList;
     }
 
 }
