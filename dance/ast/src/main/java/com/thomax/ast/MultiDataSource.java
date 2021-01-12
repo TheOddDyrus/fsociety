@@ -36,6 +36,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -73,7 +74,7 @@ public class MultiDataSource {
         String sql1 = "SELECT t1.hix, 中国.pix " +
                 "FROM  PROPERTY_TOPIC t2, c.tb_product t1, db_device.thomax, 中国 " +
                 "WHERE t1.product_id = 12 and t1.product_id = 'hello' and t1.id = t2.tid or t2.cid = db_device.thomax.mid " +
-                "OR db_device.thomax.mid not in ('1', '2') AND 中国.aaa = 123";
+                "OR db_device.thomax.mid not in ('1', '2') AND 中国.aaa = 123 and 中国.id = t1.id";
 
         String sql2 = "SELECT t1.hix, t3.pix " +
                 "FROM PROPERTY_TOPIC t1, david dd " +
@@ -82,19 +83,23 @@ public class MultiDataSource {
                 "INNER JOIN thomax2 t4 ON t3.cid = t4.mid " +
                 "WHERE t1.product_id in (123, 456) AND dd.id = t1.id";
 
+        String sql3 = "SELECT t1.command, t2.device_id, t3.info_value \n" +
+                "FROM PROPERTY_TOPIC t1, tb_device_mac t2, tb_device_info t3 \n" +
+                "WHERE t1.deviceId = t2.device_id AND t2.mac_address = t3.mac";
+
         HashMap<String, Object> topicData = new HashMap<>();
-        topicData.put("dataTimeStamp", "generalMessage.getData().get(dataTimeStamp)");
-        topicData.put("tslType", "StringUtils.isEmpty(tslType) ? (publishDataMap.size() > 0 ? properties : events) : tslType");
-        topicData.put("macAddress", "did");
-        topicData.put("deviceId", "deviceId");
-        topicData.put("productId", "productId");
-        topicData.put("command", "generalMessage.getCommand()");
+        topicData.put("dataTimeStamp", System.currentTimeMillis()); //generalMessage.getData().get(dataTimeStamp)
+        topicData.put("tslType", "properties"); //StringUtils.isEmpty(tslType) ? (publishDataMap.size() > 0 ? properties : events) : tslType
+        topicData.put("macAddress", "ABCDEFGHI");
+        topicData.put("deviceId", 100310);
+        topicData.put("productId", 1234);
+        topicData.put("command", "command-test"); //generalMessage.getCommand()
         HashMap<String, Object> propertyData = new HashMap<>();
+        propertyData.put("SWITCH_STATUS", 1);
         topicData.put("data", propertyData);
 
         try {
-            Result result = parseSQL(sql2, topicData);
-            System.out.println(result);
+            Result result = execSQL(sql3, topicData);
         } catch (NoDataException nde) {
             System.out.println("没有数据查询出来");
         } catch (Exception e) {
@@ -103,7 +108,7 @@ public class MultiDataSource {
     }
 
     /**
-     * 解析SQL，进行多数据源关联查询
+     * 解析SQL并进行多数据源关联查询
      *
      * 支持的关键字：SELECT FROM WHERE LEFT INNER JOIN ON NOT IN AND OR
      * 支持的符号： ( ) , = != ''
@@ -112,7 +117,10 @@ public class MultiDataSource {
      * @param sql
      * @param topicData 主表数据源
      */
-    public static Result parseSQL(String sql, Map<String, Object> topicData) throws Exception {
+    public static Result execSQL(String sql, Map<String, Object> topicData) throws Exception {
+        System.out.println(">>设备上报的topicData：" + JSON.toJSONString(topicData));
+        System.out.println(">>待执行的SQL：" + sql);
+        long start = System.currentTimeMillis();
         //VERIFY BRACKET
         Matcher matcher = BRACKET_PATTERN.matcher(sql);
         while (matcher.find()) {
@@ -121,13 +129,17 @@ public class MultiDataSource {
                 throw new Exception("目前括号只支持IN ()的语法，不支持复合条件语句比如：((x = y) or (a = b))");
             }
         }
+        System.out.println(">>正则表达式语法校验耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
 
+        start = System.currentTimeMillis();
         //get Druid AST
         List<SQLStatement> statementList = SQLUtils.parseStatements(sql, JdbcConstants.MYSQL); //这步解析大概耗时500ms（如果把tableRela转JSON，解析JSON时间差不多）
         SQLSelectStatement statement = (SQLSelectStatement) statementList.get(0);
         SQLSelect sqlSelect = (SQLSelect) statement.getChildren().get(0);
         MySqlSelectQueryBlock query = (MySqlSelectQueryBlock) sqlSelect.getQuery();
+        System.out.println(">>Druid解析SQL生成AST耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
 
+        start = System.currentTimeMillis();
         //new Business AST
         TableRela tableRela = new TableRela();
 
@@ -155,10 +167,15 @@ public class MultiDataSource {
         if (invalidTable != null && invalidTable.length() > 0) {
             throw new Exception("表: " + invalidTable + " 和其他表之间缺少关联关系");
         }
+        System.out.println(">>生成数据流转AST耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
 
         String s = JSON.toJSONString(tableRela);
-        System.out.println(s);
+        System.out.println(">>生成数据流转AST转JSON：" + s);
+        start = System.currentTimeMillis();
+        TableRela newObject = (TableRela) JSON.parseObject(s, TableRela.class);
+        System.out.println(">>数据流转AST的JSON转回对象耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
 
+        start = System.currentTimeMillis();
         //Step5 - EXECUTE
         Result result = new Result();
         execAST(tableRela, topicData, result);
@@ -183,18 +200,34 @@ public class MultiDataSource {
             }
             deleteIndex++;
         }
+        deleteIndexList.sort(new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                if (o1 < o2) {
+                    return 1;
+                } else if (o1 > o2) {
+                    return -1;
+                }
+                return 0;
+            }
+        });
         for (List<Object> row : result.getRowList()) {
-            int cursor = 0;
             for (Integer index : deleteIndexList) {
+                int cursor = 0;
                 Iterator<Object> rowIterator = row.iterator();
                 while (rowIterator.hasNext()) {
+                    rowIterator.next();
                     if (cursor == index) {
                         rowIterator.remove();
+                        break;
                     }
                     cursor++;
                 }
             }
         }
+        System.out.println(">>使用AST执行多数据源操作耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
+
+        System.out.println(">>查询结果：" + JSON.toJSONString(result));
 
         return result;
     }
@@ -237,7 +270,7 @@ public class MultiDataSource {
                     if (leftColumn != null && rightColumn != null) {
                         if ((leftTableAlias.equals(leftColumn.getAlias()) && rightTableAlias.equals(rightColumn.getAlias())) ||
                                 (leftTableAlias.equals(rightColumn.getAlias()) && rightTableAlias.equals(leftColumn.getAlias()))) {
-                            leftTableAliasList.add(rightColumn.getAlias());
+                            leftTableAliasList.add(rightTableAlias);
                             return null;
                         }
                     }
@@ -307,7 +340,9 @@ public class MultiDataSource {
                     selectBuilder.append(column.getColumn()).append(",");
                 }
                 selectBuilder.deleteCharAt(selectBuilder.length() - 1);
-                selectBuilder.append(" ");
+                selectBuilder.append(" from ");
+                selectBuilder.append(right.getTableName());
+                selectBuilder.append(" where ");
 
                 boolean isFristAnd = true;
                 boolean isExistPreviousExpr = false;
@@ -441,14 +476,24 @@ public class MultiDataSource {
                         isExistPreviousExpr = true;
                     }
 
+                    Column resultColumn;
                     if (tableCondition.getLeft().getAlias().equals(getTableAlias(right))) {
                         selectBuilder.append(tableCondition.getLeft().getColumn());
+                        resultColumn = tableCondition.getRight();
                     } else {
                         selectBuilder.append(tableCondition.getRight().getColumn());
+                        resultColumn = tableCondition.getLeft();
                     }
                     selectBuilder.append(" in ("); //目前2表之间只能使用t1.id = t2.id来关联
-                    for (Object value : tableCondition.getCollection()) {
-                        selectBuilder.append(value).append(",");
+                    int index = getColumnIndex(resultColumn, result);
+                    for (List<Object> values : result.getRowList()) {
+                        Object value = values.get(index);
+                        if (value instanceof Number) {
+                            selectBuilder.append(value);
+                        } else {
+                            selectBuilder.append("'").append(value).append("'");
+                        }
+                        selectBuilder.append(",");
                     }
                     selectBuilder.deleteCharAt(selectBuilder.length() - 1);
                     selectBuilder.append(")");
@@ -462,7 +507,20 @@ public class MultiDataSource {
         }
     }
 
-    private static void execMySQL(String sql, List<Column> rightColumnList, RelaType rela, List<TableCondition> twoTableCondition, Result result, Properties prop) throws Exception {
+    /**
+     * 执行mysql
+     *
+     * @param sql 生成的单表查询SQL
+     * @param rightColumnList 此SQL中查询出来的字段名称集合
+     * @param rela 此SQL语句与结果集Result之间的关系
+     * @param twoTableCondition 此SQL语句与结果集Result之间的条件
+     * @param result 结果集Result
+     * @param prop 数据库属性
+     *
+     * @throws Exception
+     */
+    private static void execMySQL(String sql, List<Column> rightColumnList, RelaType rela, List<TableCondition> twoTableCondition,
+                                  Result result, Properties prop) throws Exception {
         Connection connection = null;
         Statement statement = null;
         ResultSet resultSet = null;
@@ -501,7 +559,7 @@ public class MultiDataSource {
                     boolean isEqual = false;
                     while (resultSet.next()) {
                         Object value = resultSet.getObject(rightTableColumn.getColumn());
-                        if (row.get(columnIndex).equals(value)) {
+                        if (row.get(columnIndex).toString().equals(value.toString())) {
                             for (Column column : rightColumnList) {
                                 row.add(resultSet.getObject(column.getColumn()));
                             }
@@ -630,6 +688,11 @@ public class MultiDataSource {
         table.setDbType(DbType.MYSQL);
         Properties prop = new Properties();
         //TODO 表信息补全
+        prop.put("user", "root");
+        prop.put("pwd", "123456");
+        prop.put("addr", "mysql1.het.com");
+        prop.put("port", "3306");
+        prop.put("database", "db_device");
         table.setBaseInfo(prop);
 
         if (isLeft) {
@@ -638,8 +701,6 @@ public class MultiDataSource {
             tableRela.setRight(table);
         }
     }
-
-    //TODO 回退点 thoamx +++
 
     /**
      * 解析条件
