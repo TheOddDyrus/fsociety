@@ -141,7 +141,7 @@ public class MultiDataSource {
         //get Druid AST
         List<SQLStatement> statementList = SQLUtils.parseStatements(sql, JdbcConstants.MYSQL); //这步解析大概耗时200~500ms
         SQLSelectStatement statement = (SQLSelectStatement) statementList.get(0);
-        SQLSelect sqlSelect = (SQLSelect) statement.getChildren().get(0);
+        SQLSelect sqlSelect = statement.getSelect();
         MySqlSelectQueryBlock query = (MySqlSelectQueryBlock) sqlSelect.getQuery();
         System.out.println(">>Druid解析SQL生成AST耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
 
