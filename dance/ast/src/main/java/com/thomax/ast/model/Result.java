@@ -9,14 +9,6 @@ public class Result {
 
     private List<List<Object>> rowList;
 
-    public void addColumn(Column column) {
-        if (columnList == null) {
-            columnList = new LinkedList<>();
-        }
-
-        columnList.add(column);
-    }
-
     public List<Column> getColumnList() {
         return columnList;
     }
@@ -25,20 +17,28 @@ public class Result {
         this.columnList = columnList;
     }
 
-    public void addRow(List<Object> row) {
-        if (rowList == null) {
-            rowList = new LinkedList<>();
-        }
-
-        rowList.add(row);
-    }
-
     public List<List<Object>> getRowList() {
         return rowList;
     }
 
     public void setRowList(List<List<Object>> rowList) {
         this.rowList = rowList;
+    }
+
+    public void addColumn(Column column) {
+        if (columnList == null) {
+            columnList = new LinkedList<>();
+        }
+
+        columnList.add(column);
+    }
+
+    public void addRow(List<Object> row) {
+        if (rowList == null) {
+            rowList = new LinkedList<>();
+        }
+
+        rowList.add(row);
     }
 
 }

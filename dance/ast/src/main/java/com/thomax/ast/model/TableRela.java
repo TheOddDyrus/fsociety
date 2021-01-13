@@ -1,5 +1,7 @@
 package com.thomax.ast.model;
 
+import com.thomax.ast.type.RelaType;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,6 +59,14 @@ public class TableRela {
         this.columnList = columnList;
     }
 
+    public List<TableCondition> getConditionList() {
+        return conditionList;
+    }
+
+    public void setConditionList(List<TableCondition> conditionList) {
+        this.conditionList = conditionList;
+    }
+
     public void addColumn(Column newColumn) {
         if (columnList == null) {
             columnList = new ArrayList<>();
@@ -71,14 +81,6 @@ public class TableRela {
         }
 
         columnList.add(newColumn);
-    }
-
-    public List<TableCondition> getConditionList() {
-        return conditionList;
-    }
-
-    public void setConditionList(List<TableCondition> conditionList) {
-        this.conditionList = conditionList;
     }
 
     public void addCondition(TableCondition tableCondition) {

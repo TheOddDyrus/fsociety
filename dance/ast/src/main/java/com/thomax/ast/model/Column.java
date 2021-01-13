@@ -6,6 +6,8 @@ public class Column {
 
     private String column;
 
+    public Column() { }
+
     public Column(String alias, String column) {
         this.alias = alias;
         this.column = column;

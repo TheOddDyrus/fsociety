@@ -20,10 +20,10 @@ import com.alibaba.druid.util.JdbcConstants;
 import com.alibaba.fastjson.JSON;
 import com.thomax.ast.exception.NoDataException;
 import com.thomax.ast.model.Column;
-import com.thomax.ast.model.ConditionType;
-import com.thomax.ast.model.DbType;
-import com.thomax.ast.model.OperatorType;
-import com.thomax.ast.model.RelaType;
+import com.thomax.ast.type.ConditionType;
+import com.thomax.ast.type.DbType;
+import com.thomax.ast.type.OperatorType;
+import com.thomax.ast.type.RelaType;
 import com.thomax.ast.model.Result;
 import com.thomax.ast.model.Table;
 import com.thomax.ast.model.TableCondition;
@@ -86,6 +86,10 @@ public class MultiDataSource {
         String sql3 = "SELECT t1.command, t2.device_id, t3.info_value \n" +
                 "FROM PROPERTY_TOPIC t1, tb_device_mac t2, tb_device_info t3 \n" +
                 "WHERE t1.deviceId = t2.device_id AND t2.mac_address = t3.mac";
+        String sql4 = sql3 + " AND t1.macAddress = 'ABCDEFGHI' AND t2.product_id = 136 AND t3.product_id = 136";
+        String sql5 = sql3 + " AND t1.macAddress in ('ABCDEFGHI') AND t2.product_id in (136) AND t3.product_id in (136)";
+        String sql6 = sql3 + " AND t1.macAddress not in ('AFK', 'L.A') AND t2.product_id not in (137, 456) AND t3.product_id not in (137, 456)";
+        String sql7 = sql3 + " AND t1.macAddress != 'AFK' AND t2.product_id != 137 AND t3.product_id != 456";
 
         HashMap<String, Object> topicData = new HashMap<>();
         topicData.put("dataTimeStamp", System.currentTimeMillis()); //generalMessage.getData().get(dataTimeStamp)
@@ -99,7 +103,7 @@ public class MultiDataSource {
         topicData.put("data", propertyData);
 
         try {
-            Result result = execSQL(sql3, topicData);
+            Result result = execSQL(sql7, topicData);
             System.out.println(">>查询结果：" + JSON.toJSONString(result));
         } catch (NoDataException nde) {
             System.out.println("没有数据查询出来");
@@ -125,9 +129,10 @@ public class MultiDataSource {
         //VERIFY BRACKET
         Matcher matcher = BRACKET_PATTERN.matcher(sql);
         while (matcher.find()) {
-            String condition = matcher.group();
-            if (!condition.contains(",")) {
-                throw new Exception("目前括号只支持IN ()的语法，不支持复合条件语句比如：((x = y) or (a = b))");
+            int startIndex = matcher.start();
+            String prefix = sql.substring(startIndex - 4, startIndex - 2);
+            if (!"IN".equalsIgnoreCase(prefix)) {
+                throw new Exception("目前括号只支持IN或NOT IN ()的语法，不支持复合条件语句比如：((x = y) or (a = b))");
             }
         }
         System.out.println(">>正则表达式语法校验耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
@@ -364,8 +369,6 @@ public class MultiDataSource {
                                 }
                             }
 
-                            selectBuilder.append(tableCondition.getLeft().getColumn())
-                                    .append(" ");
                             switch (tableCondition.getOperator()) {
                                 case EQUAL:
                                     selectBuilder.append(tableCondition.getLeft().getColumn())

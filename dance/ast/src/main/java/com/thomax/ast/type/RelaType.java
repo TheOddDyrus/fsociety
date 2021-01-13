@@ -1,4 +1,4 @@
-package com.thomax.ast.model;
+package com.thomax.ast.type;
 
 public enum RelaType {
 

@@ -1,5 +1,8 @@
 package com.thomax.ast.model;
 
+import com.thomax.ast.type.ConditionType;
+import com.thomax.ast.type.OperatorType;
+
 import java.util.List;
 
 public class TableCondition {
