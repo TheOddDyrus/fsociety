@@ -72,9 +72,10 @@ public class TableRela {
             columnList = new ArrayList<>();
         } else {
             for (Column column : columnList) {
-                if (column.getAlias()!= null &&
-                        column.getAlias().equals(newColumn.getAlias()) &&
-                        column.getColumn().equals(newColumn.getColumn())) {
+                if (column.getColumn().equals(newColumn.getColumn())) {
+                    if (newColumn.getIsSelect()) {
+                        column.setIsSelect(true);
+                    }
                     return;
                 }
             }

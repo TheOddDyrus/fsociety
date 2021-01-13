@@ -36,12 +36,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -83,7 +83,7 @@ public class MultiDataSource {
                 "INNER JOIN thomax2 t4 ON t3.cid = t4.mid " +
                 "WHERE t1.product_id in (123, 456) AND dd.id = t1.id";
 
-        String sql3 = "SELECT t1.command, t2.device_id, t3.info_value \n" +
+        String sql3 = "SELECT t1.command, t1.SWITCH_STATUS, t1.TEST_HELLO, t2.device_id, t3.info_value \n" +
                 "FROM PROPERTY_TOPIC t1, tb_device_mac t2, tb_device_info t3 \n" +
                 "WHERE t1.deviceId = t2.device_id AND t2.mac_address = t3.mac";
         String sql4 = sql3 + " AND t1.macAddress = 'ABCDEFGHI' AND t2.product_id = 136 AND t3.product_id = 136";
@@ -103,7 +103,8 @@ public class MultiDataSource {
         topicData.put("data", propertyData);
 
         try {
-            Result result = execSQL(sql7, topicData);
+            TableRela tableRela = parseSQL(sql7);
+            Result result = execAST(tableRela, topicData);
             System.out.println(">>查询结果：" + JSON.toJSONString(result));
         } catch (NoDataException nde) {
             System.out.println("没有数据查询出来");
@@ -113,17 +114,15 @@ public class MultiDataSource {
     }
 
     /**
-     * 解析SQL并进行多数据源关联查询
+     * 解析SQL生成业务AST
      *
      * 支持的关键字：SELECT FROM WHERE LEFT INNER JOIN ON NOT IN AND OR
      * 支持的符号： ( ) , = != ''
      * 注意事项：目前括号只支持IN ()的语法，不支持复合条件语句比如：((x = y) or (a = b))
      *
      * @param sql
-     * @param topicData 主表数据源
      */
-    public static Result execSQL(String sql, Map<String, Object> topicData) throws Exception {
-        System.out.println(">>设备上报的topicData：" + JSON.toJSONString(topicData));
+    public static TableRela parseSQL(String sql) throws Exception {
         System.out.println(">>待执行的SQL：" + sql);
         long start = System.currentTimeMillis();
         //VERIFY BRACKET
@@ -153,14 +152,12 @@ public class MultiDataSource {
         parseTable(query.getFrom(), tableRela);
 
         //Step2 - COLUMN
-        List<Column> selectColumnList = new ArrayList<>();
         List<SQLSelectItem> selectList = query.getSelectList();
         for (SQLSelectItem sqlSelectItem : selectList) {
             SQLPropertyExpr column = (SQLPropertyExpr) sqlSelectItem.getExpr();
             String alias = ((SQLIdentifierExpr) column.getOwner()).getName();
             String name = column.getName();
-            Column newColumn = new Column(alias, name);
-            selectColumnList.add(newColumn);
+            Column newColumn = new Column(alias, name, true);
 
             addColumn(newColumn, tableRela);
         }
@@ -181,59 +178,7 @@ public class MultiDataSource {
         tableRela = JSON.parseObject(tableRelaJson, TableRela.class);
         System.out.println(">>数据流转AST的JSON转回对象耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
 
-        start = System.currentTimeMillis();
-        //Step5 - EXECUTE
-        Result result = new Result();
-        execAST(tableRela, topicData, result);
-
-        //Step6 - FILTER
-        List<Column> columnList = result.getColumnList();
-        List<Integer> deleteIndexList = new ArrayList<>();
-        int deleteIndex = 0;
-        Iterator<Column> columnIterator = columnList.iterator();
-        while (columnIterator.hasNext()) {
-            Column column = columnIterator.next();
-            boolean isSelect = false;
-            for (Column selectColumn : selectColumnList) {
-                if (selectColumn.getAlias().equals(column.getAlias()) && selectColumn.getColumn().equals(column.getColumn())) {
-                    isSelect = true;
-                    break;
-                }
-            }
-            if (!isSelect) {
-                columnIterator.remove();
-                deleteIndexList.add(deleteIndex);
-            }
-            deleteIndex++;
-        }
-        deleteIndexList.sort(new Comparator<Integer>() {
-            @Override
-            public int compare(Integer o1, Integer o2) {
-                if (o1 < o2) {
-                    return 1;
-                } else if (o1 > o2) {
-                    return -1;
-                }
-                return 0;
-            }
-        });
-        for (List<Object> row : result.getRowList()) {
-            for (Integer index : deleteIndexList) {
-                int cursor = 0;
-                Iterator<Object> rowIterator = row.iterator();
-                while (rowIterator.hasNext()) {
-                    rowIterator.next();
-                    if (cursor == index) {
-                        rowIterator.remove();
-                        break;
-                    }
-                    cursor++;
-                }
-            }
-        }
-        System.out.println(">>使用AST执行多数据源操作耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
-
-        return result;
+        return tableRela;
     }
 
     /**
@@ -294,17 +239,426 @@ public class MultiDataSource {
     }
 
     /**
-     * 遍历业务AST来操作多数据源
+     * 获得字段在结果集的下标
+     *
+     * @param indexColumn 字段
+     * @param result 结果集
+     * @return
+     */
+    private static int getColumnIndex(Column indexColumn, Result result) {
+        int index = 0;
+        for (Column column : result.getColumnList()) {
+            if (indexColumn.getAlias().equals(column.getAlias()) && indexColumn.getColumn().equals(column.getColumn())) {
+                break;
+            }
+            index++;
+        }
+
+        return index;
+    }
+
+    /**
+     * 解析表结构
+     *
+     * @param tableSource 表的数据源
+     * @param tableRela 表的关系
+     * @throws Exception
+     */
+    private static void parseTable(SQLTableSource tableSource, TableRela tableRela) throws Exception {
+        SQLJoinTableSource tables = (SQLJoinTableSource) tableSource;
+        SQLTableSource left = tables.getLeft();
+        if (left instanceof SQLJoinTableSource) {
+            TableRela parent = new TableRela();
+            tableRela.setParent(parent);
+            parseTable(left, parent);
+        } else {
+            //Primary table - Topic
+            addTable(left, tableRela, true);
+        }
+
+        //Right table
+        SQLTableSource right = tables.getRight();
+        addTable(right, tableRela, false);
+
+        //Table relationship
+        switch (tables.getJoinType()) {
+            case COMMA: //,
+                tableRela.setRela(RelaType.NONE);
+                break;
+            case LEFT_OUTER_JOIN: //LEFT JOIN
+                tableRela.setRela(RelaType.LEFT_JOIN);
+                parseCondition(tables.getCondition(),  tableRela, null);
+                break;
+            case JOIN:
+            case INNER_JOIN: //INNER JOIN
+                tableRela.setRela(RelaType.INNER_JOIN);
+                parseCondition(tables.getCondition(), tableRela, null);
+                break;
+            default:
+                throw new Exception("不支持这种表的关联关系：" + tables.getJoinType().toString());
+        }
+    }
+
+    /**
+     * 新增表结构
+     *
+     * @param tableSource 表的数据源
+     * @param tableRela 表的关系
+     * @param isLeft 左侧还是右侧的表
+     * @throws Exception
+     */
+    private static void addTable(SQLTableSource tableSource, TableRela tableRela, boolean isLeft) throws Exception {
+        SQLExpr tableExpr = ((SQLExprTableSource) tableSource).getExpr();
+        String dbName = null;
+        String tableName = null;
+        //表名只支持 dbName.tableName 或 tableName这2种格式
+        if (tableExpr instanceof SQLPropertyExpr) {
+            SQLPropertyExpr expr = (SQLPropertyExpr) tableExpr;
+            SQLExpr owner = expr.getOwner();
+            if (owner != null) {
+                if (!(owner instanceof SQLIdentifierExpr)) {
+                    throw new Exception("未识别的库名:" + owner.toString());
+                } else {
+                    dbName = ((SQLIdentifierExpr) owner).getName();
+                }
+            }
+            tableName = expr.getName();
+        } else if (tableExpr instanceof SQLIdentifierExpr) {
+            tableName = ((SQLIdentifierExpr) tableExpr).getName();
+        }
+
+        String alias = tableSource.getAlias();
+        Table table = new Table(dbName, tableName, alias);
+
+        //目前多数据源只支持MySQL类型
+        table.setDbType(DbType.MYSQL);
+        Properties prop = new Properties();
+        //TODO 表信息补全
+        prop.put("user", "root");
+        prop.put("pwd", "123456");
+        prop.put("addr", "mysql1.het.com");
+        prop.put("port", "3306");
+        prop.put("database", "db_device");
+        table.setBaseInfo(prop);
+
+        if (isLeft) {
+            tableRela.setLeft(table);
+        } else {
+            tableRela.setRight(table);
+        }
+    }
+
+    /**
+     * 解析条件
+     *
+     * @param expr 条件的数据源
+     * @param tableRela 表的关系
+     * @param conditionType 条件类型
+     * @throws Exception
+     */
+    private static void parseCondition(SQLExpr expr, TableRela tableRela, ConditionType conditionType) throws Exception {
+        TableCondition tableCondition;
+        if (expr instanceof SQLBinaryOpExpr) {
+            SQLBinaryOpExpr where = (SQLBinaryOpExpr) expr;
+            SQLExpr left = where.getLeft();
+            SQLExpr right = where.getRight();
+
+            if (left instanceof SQLBinaryOpExpr || left instanceof SQLInListExpr) {
+                parseCondition(left, tableRela, conditionType);
+            } else {
+                tableCondition = new TableCondition();
+                if (conditionType == null) {
+                    tableCondition.setCondition(ConditionType.BOOLEAN_AND); //默认值
+                } else {
+                    tableCondition.setCondition(conditionType);
+                }
+
+                //只有2个同时为字段的才进行解析，其余的直接作为查询条件
+                if (left instanceof SQLPropertyExpr && right instanceof SQLPropertyExpr) {
+                    tableCondition.setLeft(parseColumn(left, tableRela));
+                    tableCondition.setRight(parseColumn(right, tableRela));
+
+                    switch (where.getOperator()) {
+                        case Equality:
+                            tableCondition.setOperator(OperatorType.EQUAL);
+                            break;
+                        case NotEqual:
+                            throw new Exception("两个表之间禁止使用!=来进行关联查询");
+                    }
+
+                    addCondition(tableRela, tableCondition);
+                } else {
+                    //使用tableCondition.left存放查询条件内的唯一字段
+                    SQLExpr valueExpr;
+                    if (left instanceof SQLPropertyExpr) {
+                        tableCondition.setLeft(parseColumn(left, tableRela));
+                        valueExpr = right;
+                    } else if (right instanceof SQLPropertyExpr) {
+                        tableCondition.setLeft(parseColumn(right, tableRela));
+                        valueExpr = left;
+                    } else {
+                        throw new Exception("SQL中不支持没有字段的纯逻辑表达式:" + where.toString());
+                    }
+                    switch (where.getOperator()) {
+                        case Equality:
+                            tableCondition.setOperator(OperatorType.EQUAL);
+                            break;
+                        case NotEqual:
+                            tableCondition.setOperator(OperatorType.NOT_EQUAL);
+                    }
+                    tableCondition.setCollection(parseCollection(Collections.singletonList(valueExpr)));
+
+                    addCondition(tableRela, tableCondition);
+                }
+            }
+
+            if (right instanceof SQLBinaryOpExpr) {
+                ConditionType rightConditionType = null;
+                switch (where.getOperator()) {
+                    case BooleanAnd: //AND
+                        rightConditionType = ConditionType.BOOLEAN_AND;
+                        break;
+                    case BooleanOr: //OR
+                        rightConditionType = ConditionType.BOOLEAN_OR;
+                        break;
+                }
+                parseCondition(right, tableRela, rightConditionType);
+            }
+        } else if (expr instanceof SQLInListExpr) {
+            SQLInListExpr where = (SQLInListExpr) expr;
+            tableCondition = new TableCondition();
+            Column column = parseColumn(where.getExpr(), tableRela);
+
+            if (conditionType == null) {
+                tableCondition.setCondition(ConditionType.BOOLEAN_AND); //默认值
+            } else {
+                tableCondition.setCondition(conditionType);
+            }
+
+            //使用tableCondition.left存放查询条件内的唯一字段
+            tableCondition.setLeft(column);
+            if (where.isNot()) {
+                tableCondition.setOperator(OperatorType.NOT_IN);
+            } else {
+                tableCondition.setOperator(OperatorType.IN);
+            }
+            List<SQLExpr> targetList = where.getTargetList();
+            if (targetList.size() > 100) {
+                throw new Exception("使用IN ()语句时，括号内的集合数不能超过100");
+            }
+            tableCondition.setCollection(parseCollection(targetList));
+
+            addCondition(tableRela, tableCondition);
+        } else {
+            throw new Exception("出现不支持的语法");
+        }
+    }
+
+    /**
+     * 解析表达式集合
+     *
+     * @param targetList 表达式集合
+     * @return
+     */
+    private static List<Object> parseCollection(List<SQLExpr> targetList) {
+        List<Object> collection;
+        if (targetList.size() == 1) {
+            collection = Collections.singletonList(parseValue(targetList.get(0)));
+        } else {
+            collection = new ArrayList<>();
+            for (SQLExpr sqlExpr : targetList) {
+                collection.add(parseValue(sqlExpr));
+            }
+        }
+
+        return collection;
+    }
+
+    /**
+     * 解析表达式中的值
+     *
+     * @param expr 表达式
+     * @return
+     */
+    private static Object parseValue(SQLExpr expr) {
+        if (expr instanceof SQLIntegerExpr) {
+           return ((SQLIntegerExpr) expr).getNumber();
+        } else {
+           return ((SQLCharExpr) expr).getText();
+        }
+    }
+
+    /**
+     * 将条件新增到表的关系中
+     *
+     * SQL为SELECT ... FROM topic t1, xx t2, yy t3时，tableRela结构如下
+     *         t1
+     *         conditionList1
+     *      t2
+     *      conditionList2
+     *   t3
+     *   conditionList3
+     * 当有关系为t2.id = t3.id的tableCondition新增到tableRela时，tableCondition会存放在最外面的t3处
+     * （这样在一次IO查询t2时，把t2.id都查出来，再回溯这些t2.id到conditionList3中关联查询）
+     *
+     * @param tableRela 表的关系
+     * @param tableCondition 条件
+     * @param isLastCheck true-最后一次检测字段；false-检测一次字段后改变为true
+     */
+    private static void addCondition(TableRela tableRela, TableCondition tableCondition) {
+        TableRela parent = tableRela.getParent();
+        Table rightTable = tableRela.getRight();
+
+        if (parent == null) { //不用使用leftTable来做判断，一直递归到parent == null可直接插入条件
+            tableRela.addCondition(tableCondition);
+        } else {
+            String checkAlias = getTableAlias(rightTable);
+
+            Column leftColumn = tableCondition.getLeft();
+            Column rightColumn = tableCondition.getRight();
+            if ((leftColumn != null && checkAlias.equals(leftColumn.getAlias())) ||
+                    (rightColumn != null && checkAlias.equals(rightColumn.getAlias()))) {
+                tableRela.addCondition(tableCondition);
+            } else {
+                addCondition(parent, tableCondition);
+            }
+        }
+    }
+
+    /**
+     * 解析字段
+     *
+     * @param expr 字段的数据源
+     * @param tableRela 表的关系
+     * @return
+     */
+    private static Column parseColumn(SQLExpr expr, TableRela tableRela) {
+        SQLPropertyExpr propertyExpr = (SQLPropertyExpr) expr;
+        SQLExpr owner = propertyExpr.getOwner();
+
+        String leftAlias = null;
+        if (owner instanceof SQLPropertyExpr) {
+            SQLIdentifierExpr subOwner = (SQLIdentifierExpr) ((SQLPropertyExpr) owner).getOwner();
+            String dbName = subOwner.getName();
+            leftAlias = ((SQLPropertyExpr) owner).getName();
+            if (dbName != null) {
+                leftAlias = dbName + "." + leftAlias;
+            }
+        } else if (owner instanceof SQLIdentifierExpr) {
+            leftAlias = ((SQLIdentifierExpr) owner).getName();
+        }
+
+        String leftColumn = propertyExpr.getName();
+        Column newColumn = new Column(leftAlias, leftColumn, false);
+
+        addColumn(newColumn, tableRela);
+
+        return newColumn;
+    }
+
+    /**
+     * 新增字段
+     *
+     * @param column 新的字段
+     * @param tableRela 表的关系
+     */
+    private static void addColumn(Column column, TableRela tableRela) {
+        if (tableRela.getParent() == null) {
+            tableRela.addColumn(column);
+        } else {
+            String checkAlias = getTableAlias(tableRela.getRight());
+            if (checkAlias.equals(column.getAlias())) {
+                tableRela.addColumn(column);
+            } else {
+                addColumn(column, tableRela.getParent());
+            }
+        }
+    }
+
+    /**
+     * 获得表的别名
+     *
+     * @param table 表的对象
+     * @return
+     */
+    private static String getTableAlias(Table table) {
+        if (table == null) {
+            return null;
+        }
+
+        if (table.getAlias() != null) {
+            return table.getAlias();
+        } else {
+            if (table.getDbName() != null) {
+                return table.getDbName() + "." + table.getTableName();
+            } else {
+                return table.getTableName();
+            }
+        }
+    }
+
+    /**
+     * 执行AST
+     *
+     * @param tableRela 业务AST
+     * @param topicData 主表数据源
+     * @return
+     * @throws Exception
+     */
+    public static Result execAST(TableRela tableRela, Map<String, Object> topicData) throws Exception {
+        System.out.println(">>设备上报的topicData：" + JSON.toJSONString(topicData));
+        long start = System.currentTimeMillis();
+
+        //Step5 - EXECUTE
+        Result result = new Result();
+        traversingAST(tableRela, topicData, result);
+
+        //Step6 - FILTER
+        List<Column> columnList = result.getColumnList();
+        List<Integer> deleteIndexList = new ArrayList<>();
+        int deleteIndex = 0;
+        Iterator<Column> columnIterator = columnList.iterator();
+        while (columnIterator.hasNext()) {
+            Column column = columnIterator.next();
+            if (!column.getIsSelect()) {
+                columnIterator.remove();
+                deleteIndexList.add(deleteIndex);
+            }
+            deleteIndex++;
+        }
+        for (List<Object> row : result.getRowList()) {
+            ListIterator<Integer> deleteIndexIterator = deleteIndexList.listIterator(deleteIndexList.size());
+            while (deleteIndexIterator.hasPrevious()) { //Reverse traversal
+                Integer index = deleteIndexIterator.previous();
+                int cursor = 0;
+                Iterator<Object> rowIterator = row.iterator();
+                while (rowIterator.hasNext()) {
+                    rowIterator.next();
+                    if (cursor == index) {
+                        rowIterator.remove();
+                        break;
+                    }
+                    cursor++;
+                }
+            }
+        }
+        System.out.println(">>使用AST执行多数据源操作耗时：" + (System.currentTimeMillis() - start) +  "毫秒");
+
+        return result;
+    }
+
+    /**
+     * 遍历AST来操作多数据源
      *
      * @param tableRela 表的关系
      * @param topicData 主表数据源
      * @param result 结果集
-     * @return
+     * @throws Exception
      */
-    private static void execAST(TableRela tableRela, Map<String, Object> topicData, Result result) throws Exception {
+    private static void traversingAST(TableRela tableRela, Map<String, Object> topicData, Result result) throws Exception {
         List<Column> rightColumnList;
         if (tableRela.getParent() != null) {
-            execAST(tableRela.getParent(), topicData, result);
+            traversingAST(tableRela.getParent(), topicData, result);
             rightColumnList = tableRela.getColumnList();
         } else {
             //get topic result
@@ -324,8 +678,12 @@ public class MultiDataSource {
                 if (topicData.containsKey(column.getColumn())) {
                     firstRow.add(topicData.get(column.getColumn()));
                 } else {
-                    Map<String, Object> data = (Map<String, Object>) topicData.get("data");
-                    firstRow.add(data.get(column.getColumn()));
+                    if (topicData.get("data") != null) {
+                        Map<String, Object> dataMap = (Map<String, Object>) topicData.get("data");
+                        firstRow.add(dataMap.get(column.getColumn()));
+                    } else {
+                        firstRow.add(null);
+                    }
                 }
             }
             result.addRow(firstRow);
@@ -592,364 +950,6 @@ public class MultiDataSource {
             throw new Exception("执行MySQL查询时发生异常：" + e.getMessage());
         } finally {
             MySQLUtil.close(statement, connection, resultSet);
-        }
-    }
-
-    /**
-     * 获得字段在结果集的下标
-     *
-     * @param indexColumn 字段
-     * @param result 结果集
-     * @return
-     */
-    private static int getColumnIndex(Column indexColumn, Result result) {
-        int index = 0;
-        for (Column column : result.getColumnList()) {
-            if (indexColumn.getAlias().equals(column.getAlias()) && indexColumn.getColumn().equals(column.getColumn())) {
-                break;
-            }
-            index++;
-        }
-
-        return index;
-    }
-
-    /**
-     * 解析表结构
-     *
-     * @param tableSource 表的数据源
-     * @param tableRela 表的关系
-     * @throws Exception
-     */
-    private static void parseTable(SQLTableSource tableSource, TableRela tableRela) throws Exception {
-        SQLJoinTableSource tables = (SQLJoinTableSource) tableSource;
-        SQLTableSource left = tables.getLeft();
-        if (left instanceof SQLJoinTableSource) {
-            TableRela parent = new TableRela();
-            tableRela.setParent(parent);
-            parseTable(left, parent);
-        } else {
-            //Primary table - Topic
-            addTable(left, tableRela, true);
-        }
-
-        //Right table
-        SQLTableSource right = tables.getRight();
-        addTable(right, tableRela, false);
-
-        //Table relationship
-        switch (tables.getJoinType()) {
-            case COMMA: //,
-                tableRela.setRela(RelaType.NONE);
-                break;
-            case LEFT_OUTER_JOIN: //LEFT JOIN
-                tableRela.setRela(RelaType.LEFT_JOIN);
-                parseCondition(tables.getCondition(),  tableRela, null);
-                break;
-            case JOIN:
-            case INNER_JOIN: //INNER JOIN
-                tableRela.setRela(RelaType.INNER_JOIN);
-                parseCondition(tables.getCondition(), tableRela, null);
-                break;
-            default:
-                throw new Exception("不支持这种表的关联关系：" + tables.getJoinType().toString());
-        }
-    }
-
-    /**
-     * 新增表结构
-     *
-     * @param tableSource 表的数据源
-     * @param tableRela 表的关系
-     * @param isLeft 左侧还是右侧的表
-     */
-    private static void addTable(SQLTableSource tableSource, TableRela tableRela, boolean isLeft) throws Exception {
-        SQLExpr tableExpr = ((SQLExprTableSource) tableSource).getExpr();
-        String dbName = null;
-        String tableName = null;
-        //表名只支持 dbName.tableName 或 tableName这2种格式
-        if (tableExpr instanceof SQLPropertyExpr) {
-            SQLPropertyExpr expr = (SQLPropertyExpr) tableExpr;
-            SQLExpr owner = expr.getOwner();
-            if (owner != null) {
-                if (!(owner instanceof SQLIdentifierExpr)) {
-                    throw new Exception("未识别的库名:" + owner.toString());
-                } else {
-                    dbName = ((SQLIdentifierExpr) owner).getName();
-                }
-            }
-            tableName = expr.getName();
-        } else if (tableExpr instanceof SQLIdentifierExpr) {
-            tableName = ((SQLIdentifierExpr) tableExpr).getName();
-        }
-
-        String alias = tableSource.getAlias();
-        Table table = new Table(dbName, tableName, alias);
-
-        //目前多数据源只支持MySQL类型
-        table.setDbType(DbType.MYSQL);
-        Properties prop = new Properties();
-        //TODO 表信息补全
-        prop.put("user", "root");
-        prop.put("pwd", "123456");
-        prop.put("addr", "mysql1.het.com");
-        prop.put("port", "3306");
-        prop.put("database", "db_device");
-        table.setBaseInfo(prop);
-
-        if (isLeft) {
-            tableRela.setLeft(table);
-        } else {
-            tableRela.setRight(table);
-        }
-    }
-
-    /**
-     * 解析条件
-     *
-     * @param expr 条件的数据源
-     * @param tableRela 表的关系
-     * @param conditionType 条件类型
-     * @throws Exception
-     */
-    private static void parseCondition(SQLExpr expr, TableRela tableRela, ConditionType conditionType) throws Exception {
-        TableCondition tableCondition;
-        if (expr instanceof SQLBinaryOpExpr) {
-            SQLBinaryOpExpr where = (SQLBinaryOpExpr) expr;
-            SQLExpr left = where.getLeft();
-            SQLExpr right = where.getRight();
-
-            if (left instanceof SQLBinaryOpExpr || left instanceof SQLInListExpr) {
-                parseCondition(left, tableRela, conditionType);
-            } else {
-                tableCondition = new TableCondition();
-                if (conditionType == null) {
-                    tableCondition.setCondition(ConditionType.BOOLEAN_AND); //默认值
-                } else {
-                    tableCondition.setCondition(conditionType);
-                }
-
-                //只有2个同时为字段的才进行解析，其余的直接作为查询条件
-                if (left instanceof SQLPropertyExpr && right instanceof SQLPropertyExpr) {
-                    tableCondition.setLeft(parseColumn(left, tableRela));
-                    tableCondition.setRight(parseColumn(right, tableRela));
-
-                    switch (where.getOperator()) {
-                        case Equality:
-                            tableCondition.setOperator(OperatorType.EQUAL);
-                            break;
-                        case NotEqual:
-                            throw new Exception("两个表之间禁止使用!=来进行关联查询");
-                    }
-
-                    addCondition(tableRela, tableCondition);
-                } else {
-                    //使用tableCondition.left存放查询条件内的唯一字段
-                    SQLExpr valueExpr;
-                    if (left instanceof SQLPropertyExpr) {
-                        tableCondition.setLeft(parseColumn(left, tableRela));
-                        valueExpr = right;
-                    } else if (right instanceof SQLPropertyExpr) {
-                        tableCondition.setLeft(parseColumn(right, tableRela));
-                        valueExpr = left;
-                    } else {
-                        throw new Exception("SQL中不支持没有字段的纯逻辑表达式:" + where.toString());
-                    }
-                    switch (where.getOperator()) {
-                        case Equality:
-                            tableCondition.setOperator(OperatorType.EQUAL);
-                            break;
-                        case NotEqual:
-                            tableCondition.setOperator(OperatorType.NOT_EQUAL);
-                    }
-                    tableCondition.setCollection(parseCollection(Collections.singletonList(valueExpr)));
-
-                    addCondition(tableRela, tableCondition);
-                }
-            }
-
-            if (right instanceof SQLBinaryOpExpr) {
-                ConditionType rightConditionType = null;
-                switch (where.getOperator()) {
-                    case BooleanAnd: //AND
-                        rightConditionType = ConditionType.BOOLEAN_AND;
-                        break;
-                    case BooleanOr: //OR
-                        rightConditionType = ConditionType.BOOLEAN_OR;
-                        break;
-                }
-                parseCondition(right, tableRela, rightConditionType);
-            }
-        } else if (expr instanceof SQLInListExpr) {
-            SQLInListExpr where = (SQLInListExpr) expr;
-            tableCondition = new TableCondition();
-            Column column = parseColumn(where.getExpr(), tableRela);
-
-            if (conditionType == null) {
-                tableCondition.setCondition(ConditionType.BOOLEAN_AND); //默认值
-            } else {
-                tableCondition.setCondition(conditionType);
-            }
-
-            //使用tableCondition.left存放查询条件内的唯一字段
-            tableCondition.setLeft(column);
-            if (where.isNot()) {
-                tableCondition.setOperator(OperatorType.NOT_IN);
-            } else {
-                tableCondition.setOperator(OperatorType.IN);
-            }
-            List<SQLExpr> targetList = where.getTargetList();
-            if (targetList.size() > 100) {
-                throw new Exception("使用IN ()语句时，括号内的集合数不能超过100");
-            }
-            tableCondition.setCollection(parseCollection(targetList));
-
-            addCondition(tableRela, tableCondition);
-        } else {
-            throw new Exception("出现不支持的语法");
-        }
-    }
-
-    /**
-     * 解析表达式集合
-     *
-     * @param targetList 表达式集合
-     * @return
-     */
-    private static List<Object> parseCollection(List<SQLExpr> targetList) {
-        List<Object> collection;
-        if (targetList.size() == 1) {
-            collection = Collections.singletonList(parseValue(targetList.get(0)));
-        } else {
-            collection = new ArrayList<>();
-            for (SQLExpr sqlExpr : targetList) {
-                collection.add(parseValue(sqlExpr));
-            }
-        }
-
-        return collection;
-    }
-
-    /**
-     * 解析表达式中的值
-     *
-     * @param expr 表达式
-     * @return
-     */
-    private static Object parseValue(SQLExpr expr) {
-        if (expr instanceof SQLIntegerExpr) {
-           return ((SQLIntegerExpr) expr).getNumber();
-        } else {
-           return ((SQLCharExpr) expr).getText();
-        }
-    }
-
-    /**
-     * 将条件新增到表的关系中
-     *
-     * SQL为SELECT ... FROM topic t1, xx t2, yy t3时，tableRela结构如下
-     *         t1
-     *         conditionList1
-     *      t2
-     *      conditionList2
-     *   t3
-     *   conditionList3
-     * 当有关系为t2.id = t3.id的tableCondition新增到tableRela时，tableCondition会存放在最外面的t3处
-     * （这样在一次IO查询t2时，把t2.id都查出来，再回溯这些t2.id到conditionList3中关联查询）
-     *
-     * @param tableRela 表的关系
-     * @param tableCondition 条件
-     * @param isLastCheck true-最后一次检测字段；false-检测一次字段后改变为true
-     */
-    private static void addCondition(TableRela tableRela, TableCondition tableCondition) {
-        TableRela parent = tableRela.getParent();
-        Table rightTable = tableRela.getRight();
-
-        if (parent == null) { //不用使用leftTable来做判断，一直递归到parent == null可直接插入条件
-            tableRela.addCondition(tableCondition);
-        } else {
-            String checkAlias = getTableAlias(rightTable);
-
-            Column leftColumn = tableCondition.getLeft();
-            Column rightColumn = tableCondition.getRight();
-            if ((leftColumn != null && checkAlias.equals(leftColumn.getAlias())) ||
-                    (rightColumn != null && checkAlias.equals(rightColumn.getAlias()))) {
-                tableRela.addCondition(tableCondition);
-            } else {
-                addCondition(parent, tableCondition);
-            }
-        }
-    }
-
-    /**
-     * 解析字段
-     *
-     * @param expr 字段的数据源
-     * @param tableRela 表的关系
-     * @return
-     */
-    private static Column parseColumn(SQLExpr expr, TableRela tableRela) {
-        SQLPropertyExpr propertyExpr = (SQLPropertyExpr) expr;
-        SQLExpr owner = propertyExpr.getOwner();
-
-        String leftAlias = null;
-        if (owner instanceof SQLPropertyExpr) {
-            SQLIdentifierExpr subOwner = (SQLIdentifierExpr) ((SQLPropertyExpr) owner).getOwner();
-            String dbName = subOwner.getName();
-            leftAlias = ((SQLPropertyExpr) owner).getName();
-            if (dbName != null) {
-                leftAlias = dbName + "." + leftAlias;
-            }
-        } else if (owner instanceof SQLIdentifierExpr) {
-            leftAlias = ((SQLIdentifierExpr) owner).getName();
-        }
-
-        String leftColumn = propertyExpr.getName();
-        Column newColumn = new Column(leftAlias, leftColumn);
-
-        addColumn(newColumn, tableRela);
-
-        return newColumn;
-    }
-
-    /**
-     * 新增字段
-     *
-     * @param column 新的字段
-     * @param tableRela 表的关系
-     */
-    private static void addColumn(Column column, TableRela tableRela) {
-        if (tableRela.getParent() == null) {
-            tableRela.addColumn(column);
-        } else {
-            String checkAlias = getTableAlias(tableRela.getRight());
-            if (checkAlias.equals(column.getAlias())) {
-                tableRela.addColumn(column);
-            } else {
-                addColumn(column, tableRela.getParent());
-            }
-        }
-    }
-
-    /**
-     * 获得表的别名
-     *
-     * @param table 表的对象
-     * @return
-     */
-    private static String getTableAlias(Table table) {
-        if (table == null) {
-            return null;
-        }
-
-        if (table.getAlias() != null) {
-            return table.getAlias();
-        } else {
-            if (table.getDbName() != null) {
-                return table.getDbName() + "." + table.getTableName();
-            } else {
-                return table.getTableName();
-            }
         }
     }
 

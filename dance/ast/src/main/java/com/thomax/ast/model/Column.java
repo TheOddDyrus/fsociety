@@ -6,11 +6,14 @@ public class Column {
 
     private String column;
 
+    private boolean isSelect;
+
     public Column() { }
 
-    public Column(String alias, String column) {
+    public Column(String alias, String column, boolean isSelect) {
         this.alias = alias;
         this.column = column;
+        this.isSelect = isSelect;
     }
 
     public String getAlias() {
@@ -27,5 +30,13 @@ public class Column {
 
     public void setColumn(String column) {
         this.column = column;
+    }
+
+    public boolean getIsSelect() {
+        return isSelect;
+    }
+
+    public void setIsSelect(boolean isSelect) {
+        this.isSelect = isSelect;
     }
 }
