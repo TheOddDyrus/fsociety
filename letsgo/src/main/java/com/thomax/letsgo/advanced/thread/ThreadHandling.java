@@ -3,6 +3,9 @@ package com.thomax.letsgo.advanced.thread;
 import sun.nio.ch.Interruptible;
 
 import java.io.PrintWriter;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
 import java.security.AccessControlContext;
 import java.util.concurrent.BlockingQueue;
@@ -190,4 +193,22 @@ class ThreadExceptionHandler extends Thread {
             logger.log(Level.SEVERE, "Thread terminated with exception: " + t.getName(), e);
         });
     }
+}
+
+/**
+ * 打印当前进程内的所有线程
+ */
+class MultiThread {
+
+    public static void main(String[] args) {
+        // 获取 Java 线程管理 MXBean
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        // 不需要获取同步的 monitor 和 synchronizer 信息，仅获取线程和线程堆栈信息
+        ThreadInfo[] threadInfos = threadMXBean.dumpAllThreads(false, false);
+        // 遍历线程信息，仅打印线程 ID 和线程名称信息
+        for (ThreadInfo threadInfo : threadInfos) {
+            System.out.println("[" + threadInfo.getThreadId() + "] " + threadInfo.getThreadName());
+        }
+    }
+
 }
