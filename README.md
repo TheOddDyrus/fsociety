@@ -29,6 +29,7 @@ The name `fsociety` refers to **'free society'**
                 ├─ agent
                 └─ normal
             └─ shadowsocks Shadowsocks工具
+                ├─ shadow-client
                 ├─ shadow-proxy
                 └─ shadow-refresh
         └─letsgo
