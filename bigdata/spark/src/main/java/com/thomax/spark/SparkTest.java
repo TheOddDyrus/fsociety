@@ -1,4 +1,4 @@
-package com.thomax.spark.test;
+package com.thomax.spark;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
