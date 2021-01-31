@@ -21,7 +21,6 @@
         <module>cloudspring</module>
         <module>letsgo</module>
         <module>dance</module>
-        <module>flink-example</module>
     </modules>
 
     <properties>
