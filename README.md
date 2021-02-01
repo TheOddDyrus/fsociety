@@ -31,7 +31,7 @@ The name `fsociety` refers to **'free society'**
                 ├─ shadow-client
                 ├─ shadow-proxy
                 └─ shadow-refresh
-        └─letsgo :)
+        └─letsgo
             ├─advanced 可持续发展
                 ├─arithmetic 算法
                     └─ Top10SortAlgorithm.java  十大经验排序算法
