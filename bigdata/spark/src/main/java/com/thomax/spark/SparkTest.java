@@ -8,6 +8,10 @@ import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+/**
+ * Spark的技术理念是使用微批来模拟流的计算，基于Micro-batch，数据流以时间为单位被切分为一个个批次，
+ * 通过分布式数据集RDD进行批量处理，是一种伪实时
+ */
 public class SparkTest {
 
     public static void main(String[] args) {

@@ -8,6 +8,11 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
+/**
+ * Flink是基于事件驱动的，它是一个面向流的处理框架，Flink基于每个事件一行一行地流式处理，是真正的流式计算.
+ * 另外他也可以基于流来模拟批进行计算实现批处理，所以他在技术上具有更好的扩展性，
+ * 未来可能会成为一个统一的大数据处理引擎
+ */
 public class FlinkTest {
 
     public static void main(String[] args) {
