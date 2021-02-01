@@ -71,7 +71,7 @@ RocketMQ汇总 {
 消息重复 {
     Kafka：支持at least once、at most once
     RabbitMQ：支持at least once、at most once
-    RocketMQ：支持at least once
+    RocketMQ：支持at least once RocketMQ不支持消息去重，自己在业务中去重
     ActiveMQ：支持at least once
 }
 
