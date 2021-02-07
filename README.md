@@ -34,7 +34,7 @@ The name `fsociety` refers to **'free society'**
         └─letsgo
             ├─advanced 可持续发展
                 ├─arithmetic 算法
-                    └─ Top10SortAlgorithm.java  十大经验排序算法
+                    └─ Top10SortAlgorithm.java  十大经典排序算法
                 ├─cache 缓存
                     ├─ ZookeeperDistributedLock.java  Zookeeper的分布式锁
                     ├─ RedisDistributedLock.java  Redis的分布式锁
