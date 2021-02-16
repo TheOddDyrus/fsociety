@@ -23,7 +23,7 @@ The name `fsociety` refers to **'free society'**
             ├─ ribbon
             └─ zuul
         ├─dance 你也想起舞吗
-            ├─ ast 低代码-利用AST操作多数据源
+            ├─ ast 使用AST操作多数据源
             ├─ javaagent 字节码插桩
                 ├─ agent
                 └─ normal
@@ -34,6 +34,8 @@ The name `fsociety` refers to **'free society'**
         └─letsgo
             ├─advanced 可持续发展
                 ├─arithmetic 算法
+                    ├─ BloomFilter.java  布隆过滤器
+                    ├─ ConsistentHash.java  一致性哈希算法
                     └─ Top10SortAlgorithm.java  十大经典排序算法
                 ├─cache 缓存
                     ├─ ZookeeperDistributedLock.java  Zookeeper的分布式锁
