@@ -115,5 +115,5 @@ The name `fsociety` refers to **'free society'**
             └─zoom ¡HASTA EL FINAL！
 
 
-                                             Summarize by thomax
+                                             Summarize by Thomax
                                              Good luck have fun!!!
