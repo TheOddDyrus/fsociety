@@ -1,12 +1,12 @@
 package com.thomax.spark;
 
+import com.google.common.base.Preconditions;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import scala.Tuple2;
 
 import java.util.Arrays;
 
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Spark的技术理念是使用微批来模拟流的计算，基于Micro-batch，数据流以时间为单位被切分为一个个批次，
@@ -15,7 +15,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class SparkTest {
 
     public static void main(String[] args) {
-        checkArgument(args.length > 0, "Please provide the path of input file as first parameter.");
+        Preconditions.checkArgument(args.length > 0, "Please provide the path of input file as first parameter.");
         new SparkTest().run(args[0]);
     }
 
