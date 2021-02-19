@@ -234,6 +234,30 @@ class ReentrantClass extends OriginalClass {
 }
 
 /**
+ * Java中的每个对象都有一个监视器(monitor)，来监测并发代码的重入。在非多线程编码时该监视器不发挥作用，
+ * 反之如果在synchronized 范围内，监视器发挥作用
+ *
+ * 当某代码并不持有监视器的使用权时去wait或notify，会抛出java.lang.IllegalMonitorStateException
+ */
+class SynchronizedMonitor {
+    private final Object lock = new Object();
+
+    public void run1() {
+        synchronized(lock){ //synchronized块中的方法获取了lock实例的monitor
+         //
+        }
+    }
+
+    public synchronized void run2() { //对比与上面代码中用lock来锁定的效果，实际获取的是SynchronizedMonitor类的monitor
+        //
+    }
+
+    public static synchronized void run3() { //如果修饰的是static方法，则锁定该类所有实例
+        //
+    }
+}
+
+/**
  * ConcurrentHashMap、CopyOnWriteArraySet、CopyOnWriteArrayList是三大类集合中性能较高的线程安全集合
  * Collections集合工具类中通过包装器工厂方法synchronizedXX()来new出自己的一个实现了以待同步对象为互斥锁（mutex）的静态内部类，这也是一种通过封闭机制来让非线程安全类变为线程安全的方式
  */
