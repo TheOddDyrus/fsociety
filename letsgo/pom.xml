@@ -101,6 +101,12 @@
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
             <version>1.10.9</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>ant-launcher</artifactId>
+                    <groupId>org.apache.ant</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
@@ -116,6 +122,12 @@
             <groupId>cglib</groupId>
             <artifactId>cglib</artifactId>
             <version>3.2.5</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>ant</artifactId>
+                    <groupId>org.apache.ant</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.javassist</groupId>
@@ -298,10 +310,6 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
-            <groupId>redis.clients</groupId>
-            <artifactId>jedis</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
         </dependency>
@@ -318,10 +326,21 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- memory -->
         <dependency>
             <groupId>com.carrotsearch</groupId>
             <artifactId>java-sizeof</artifactId>
             <version>0.0.5</version>
+        </dependency>
+
+        <!-- redis -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
         </dependency>
     </dependencies>
 
