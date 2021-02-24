@@ -50,7 +50,7 @@ public class RedisDistributedLock {
             String lockKey = "lock:" + locaName;
             long end = System.currentTimeMillis() + acquireTimeout;
             while (System.currentTimeMillis() < end) {
-                if (conn.setnx(lockKey, identifier) == 1) {
+                if (conn.setnx(lockKey, identifier) == 1) { //setnx -> SET if Not eXist
                     conn.expire(lockKey, lockExpire);
                     return identifier;
                 }
@@ -74,9 +74,8 @@ public class RedisDistributedLock {
      * @param lockName   锁的key
      * @param identifier 释放锁的标识
      */
-    public boolean releaseLock(String lockName, String identifier) {
+    public void releaseLock(String lockName, String identifier) {
         String lockKey = "lock:" + lockName;
-        boolean retFlag = false;
         try (Jedis conn = jedisPool.getResource()) {
             while (true) {
                 conn.watch(lockKey); //监视lock，准备开始事务
@@ -87,7 +86,6 @@ public class RedisDistributedLock {
                     if (results == null) {
                         continue;
                     }
-                    retFlag = true;
                 }
                 conn.unwatch();
                 break;
@@ -95,7 +93,6 @@ public class RedisDistributedLock {
         } catch (JedisException e) {
             e.printStackTrace();
         }
-        return retFlag;
     }
 
     public void closeJedis() {
