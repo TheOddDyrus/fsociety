@@ -114,7 +114,7 @@ The name `fsociety` refers to **'free society'**
                     ├─ InterfaceSegregation.java  接口隔离原则
                     ├─ LiskovSubstitution.java  里氏代换原则
                     └─ OpenClosed.java  开闭原则
-            └─zoom ¡HASTA EL FINAL！
+            └─zoom ¡HASTA EL FINAL!
 
 
                                              Summarize by Thomax
