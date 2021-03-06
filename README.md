@@ -22,7 +22,7 @@ The name `fsociety` refers to **'free society'**
             ├─ provider2
             ├─ ribbon
             └─ zuul
-        ├─dance 你也想起舞吗
+        ├─dance
             ├─ ast 使用AST操作多数据源
             ├─ javaagent 字节码插桩
                 ├─ agent
