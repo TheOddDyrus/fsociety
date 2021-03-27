@@ -32,7 +32,7 @@ The name `fsociety` refers to **'free society'**
                 ├─ shadow-proxy
                 └─ shadow-refresh
         └─letsgo
-            ├─advanced 可持续发展
+            ├─advanced
                 ├─arithmetic 算法
                     ├─ BloomFilter.java  布隆过滤器
                     ├─ ConsistentHash.java  一致性哈希算法
