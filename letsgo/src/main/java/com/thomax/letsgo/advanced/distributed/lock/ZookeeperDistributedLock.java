@@ -1,4 +1,4 @@
-package com.thomax.letsgo.advanced.cache;
+package com.thomax.letsgo.advanced.distributed.lock;
 
 import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;

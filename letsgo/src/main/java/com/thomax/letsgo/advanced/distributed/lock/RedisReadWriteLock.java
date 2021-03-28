@@ -1,4 +1,4 @@
-package com.thomax.letsgo.advanced.cache;
+package com.thomax.letsgo.advanced.distributed.lock;
 
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;

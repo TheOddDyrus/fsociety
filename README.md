@@ -40,9 +40,6 @@ The name `fsociety` refers to **'free society'**
                     ├─ SnowFlake.java  雪花算法
                     └─ Top10Sort.java  十大经典排序算法
                 ├─cache 缓存
-                    ├─ ZookeeperDistributedLock.java  Zookeeper的分布式锁
-                    ├─ RedisDistributedLock.java  Redis的分布式锁
-                    ├─ RedisReadWriteLock.java  Redisson的分布式读写锁
                     └─ CacheAnalysis  各大缓存优劣性分析
                 ├─concurrent 并发
                     ├─ AQSHandling.java  同步器原理：闭锁、信号量、栅栏
@@ -52,6 +49,13 @@ The name `fsociety` refers to **'free society'**
                     ├─ LockHanding.java  锁与synchronized的操作
                     ├─ Volatile.java  volatile详解
                     └─ Overview  锁的总览
+                ├─distributed 分布式
+                    ├─ lock 分布式锁
+                        ├─ ZookeeperDistributedLock.java  Zookeeper实现的分布式锁
+                        ├─ RedisDistributedLock.java  Redis实现的分布式锁
+                        └─ RedisReadWriteLock.java  Redisson实现的分布式读写锁
+                    └─ transaction 分布式事务
+                        └─ 分布式事务的六种解决方案.pdf
                 ├─dynamic 动态
                     ├─ Reflect.java  反射
                     ├─ ASM.java  字节码生成器
