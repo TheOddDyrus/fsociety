@@ -16,7 +16,7 @@ import java.util.Map.Entry;
  * 空间复杂度：使用的内存，是否需要额外的存储空间，相对额外的存储空间来计算成本
  * 稳定性：相等元素排序前后相对位置保持不变，就认为是稳定的
  */
-public class Top10SortAlgorithm {
+public class Top10Sort {
 
     public static void main(String[] args) {
         int[] arr = {11, 3, 6, 1, 7, 9, 3, 2, 7, 9, 12, 13, 3};

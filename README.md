@@ -36,8 +36,9 @@ The name `fsociety` refers to **'free society'**
                 ├─arithmetic 算法
                     ├─ BloomFilter.java  布隆过滤器
                     ├─ ConsistentHash.java  一致性哈希算法
+                    ├─ LRU.java  最近最少使用算法
                     ├─ SnowFlake.java  雪花算法
-                    └─ Top10SortAlgorithm.java  十大经典排序算法
+                    └─ Top10Sort.java  十大经典排序算法
                 ├─cache 缓存
                     ├─ ZookeeperDistributedLock.java  Zookeeper的分布式锁
                     ├─ RedisDistributedLock.java  Redis的分布式锁
