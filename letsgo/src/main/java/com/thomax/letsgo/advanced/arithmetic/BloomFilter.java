@@ -1,12 +1,11 @@
 package com.thomax.letsgo.advanced.arithmetic;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Component;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -106,23 +105,18 @@ public class BloomFilter {
 /**
  * 基于REDIS的商用版布隆表达式
  */
-@Component
 class RedisBloomFilter<E> {
 
-    @Autowired
-    private RedisTemplate redisTemplate;
-
-    // @Value("${bloomfilter.expireDays}")
-    private long expireDays = 2;
+    private final RedisTemplate redisTemplate = new RedisTemplate();
 
     // total length of the Bloom filter
-    private int sizeOfBloomFilter;
+    private final int sizeOfBloomFilter;
     // expected (maximum) number of elements to be added
-    private int expectedNumberOfFilterElements;
+    private final int expectedNumberOfFilterElements;
     // number of hash functions
-    private int numberOfHashFunctions;
+    private final int numberOfHashFunctions;
     // encoding used for storing hash values as strings
-    private final Charset charset = Charset.forName("UTF-8");
+    private final Charset charset = StandardCharsets.UTF_8;
     // MD5 gives good enough accuracy in most circumstances. Change to SHA1 if it's needed
     private static final String hashName = "MD5";
     private static final MessageDigest digestFunction;
@@ -186,22 +180,12 @@ class RedisBloomFilter<E> {
      */
     public void add(final String key, byte[] bytes) {
         long startTime1 = System.currentTimeMillis();
-        Boolean exists = (Boolean) redisTemplate.execute(new RedisCallback<Boolean>() {
-                                                             @Override
-                                                             public Boolean doInRedis(RedisConnection connection) {
-                                                                 return connection.exists(key.getBytes());
-                                                             }
-                                                         }
+        Boolean exists = (Boolean) redisTemplate.execute((RedisCallback<Boolean>) connection -> connection.exists(key.getBytes())
         );
-        if (!exists) {
-            redisTemplate.execute(new RedisCallback<Boolean>() {
-                                      @Override
-                                      public Boolean doInRedis(RedisConnection connection) {
-                                          return connection.setBit(key.getBytes(), 0, false);
-                                      }
-                                  }
+        if (Boolean.FALSE.equals(exists)) {
+            redisTemplate.execute((RedisCallback<Boolean>) connection -> connection.setBit(key.getBytes(), 0, false)
             );
-            redisTemplate.expire(key, expireDays, TimeUnit.DAYS);
+            redisTemplate.expire(key, 2, TimeUnit.DAYS);
         }
 
         System.out.println("============检查=>>>>>>>>>>>花费时间:" + (System.currentTimeMillis() - startTime1) / 1000.0 + "s");

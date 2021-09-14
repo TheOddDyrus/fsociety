@@ -34,6 +34,7 @@ The name `fsociety` refers to **'free society'**
         └─letsgo
             ├─advanced
                 ├─arithmetic 算法
+                    ├─ BitMapFilter.java  位图过滤器
                     ├─ BloomFilter.java  布隆过滤器
                     ├─ ConsistentHash.java  一致性哈希算法
                     ├─ LRU.java  最近最少使用算法
