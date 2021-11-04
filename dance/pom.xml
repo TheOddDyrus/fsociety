@@ -15,6 +15,7 @@
         <module>shadowsocks</module>
         <module>javaagent</module>
         <module>ast</module>
+        <module>mockito</module>
     </modules>
 
 </project>
