@@ -1,9 +1,9 @@
 package com.thomax.shadow.client.misc;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.thomax.shadow.client.network.proxy.IProxy.TYPE;
 import com.thomax.shadow.client.ss.AesCrypt;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 
 /**
  * Data class for configuration to bring up server
@@ -117,7 +117,7 @@ public class Config {
             jsonStr = "{}";
         }
 
-        JSONObject jObj = (JSONObject)JSONValue.parse(jsonStr);
+        JSONObject jObj = JSON.parseObject(jsonStr);
         _ipAddr = (String)jObj.getOrDefault("remoteIpAddress", "");
         _port = ((Number)jObj.getOrDefault("remotePort", 1080)).intValue();
         _localIpAddr = (String)jObj.getOrDefault("localIpAddress", "127.0.0.1");
@@ -140,6 +140,6 @@ public class Config {
         jObj.put("proxyType", _proxyType.toString().toLowerCase());
         jObj.put("logLevel", _logLevel);
 
-        return Util.prettyPrintJson(jObj);
+        return jObj.toJSONString();
     }
 }

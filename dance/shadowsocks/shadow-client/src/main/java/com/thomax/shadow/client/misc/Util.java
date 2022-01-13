@@ -1,7 +1,7 @@
 package com.thomax.shadow.client.misc;
 
+import com.alibaba.fastjson.JSONObject;
 import com.thomax.shadow.client.network.proxy.Socks5Proxy;
-import org.json.simple.JSONObject;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -87,7 +87,7 @@ public class Util {
         try {
             jObj.writeJSONString(writer);
             retValue = writer.toString();
-        } catch (IOException e) {
+        } catch (Exception e) {
             // something wrong with writer, use the original method
             retValue = jObj.toJSONString();
         }
