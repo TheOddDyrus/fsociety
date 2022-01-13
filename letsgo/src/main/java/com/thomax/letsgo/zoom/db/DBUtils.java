@@ -1,4 +1,4 @@
-package com.thomax.letsgo.zoom.jdbc.util;
+package com.thomax.letsgo.zoom.db;
 
 import java.io.InputStream;
 import java.sql.Connection;

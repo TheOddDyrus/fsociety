@@ -1,6 +1,5 @@
 package com.thomax.letsgo.advanced.network;
 
-import com.thomax.letsgo.zoom.utils.StringUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -89,7 +88,7 @@ class NettyTelnetHandler extends SimpleChannelInboundHandler<String> {
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, String request) {
         String response;
         boolean close = false;
-        if (StringUtil.isEmpty(request)) {
+        if (request == null || request.trim().length() == 0) {
             response = "Please write some letter:\n";
         } else if ("bye".equals(request.toLowerCase())) {
             response = "Adios!!\n";

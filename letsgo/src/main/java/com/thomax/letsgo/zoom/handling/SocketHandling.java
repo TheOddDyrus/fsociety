@@ -1,4 +1,4 @@
-package com.thomax.letsgo.zoom.network;
+package com.thomax.letsgo.zoom.handling;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

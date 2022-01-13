@@ -1,7 +1,5 @@
 package com.thomax.letsgo.advanced.concurrent;
 
-import org.junit.runner.notification.RunListener.ThreadSafe;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -198,7 +196,6 @@ class ConditionBoundedBuffer<T> {
 /**
  * synchronized的作用域
  */
-@ThreadSafe
 class ObjectLock {
     private final ObjectLock objLock = new ObjectLock();
 

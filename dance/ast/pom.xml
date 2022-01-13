@@ -5,19 +5,18 @@
     <parent>
         <artifactId>dance</artifactId>
         <groupId>com.thomax</groupId>
-        <version>7777</version>
+        <version>∅</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>ast</artifactId>
-    <version>7777</version>
+    <version>∅</version>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>com.alibaba</groupId>
-            <artifactId>druid</artifactId>
-            <version>1.1.12</version>
+            <artifactId>druid-spring-boot-starter</artifactId>
         </dependency>
 
         <dependency>
@@ -28,7 +27,6 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>1.2.41</version>
         </dependency>
 
         <dependency>
@@ -37,11 +35,10 @@
             <version>3.2.2</version>
             <scope>compile</scope>
         </dependency>
+
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>24.1.1-jre</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 

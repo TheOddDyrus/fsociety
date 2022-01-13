@@ -1,12 +1,17 @@
 package com.thomax.letsgo.advanced.distributed.lock;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.Transaction;
-import redis.clients.jedis.exceptions.JedisException;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisPassword;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,6 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Redis实现的分布式锁(这个案例为演示版)，正常实战版如下：
@@ -24,79 +30,77 @@ import java.util.concurrent.Future;
  *          如果无变化说明这个期间没有人获取或者操作这个redis锁，则可以重新获取
  *   V4版本：采用成熟的框架redisson,封装好的方法则可以直接处理，但是waittime记住要这只为0
  */
+@Slf4j
 public class RedisDistributedLock {
 
-    private JedisPool jedisPool;
+    private final RedisTemplate<String, String> redisTemplate;
 
     public RedisDistributedLock() {
-        JedisPoolConfig config = new JedisPoolConfig();
-        config.setMaxTotal(150);
-        config.setMaxIdle(8);
-        config.setMaxWaitMillis(1000 * 100);
-        config.setTestOnBorrow(true);
-        this.jedisPool = new JedisPool(config, "127.0.0.1", 6379, 3000, "123456", 0);
+        //单机模式
+        RedisStandaloneConfiguration redisStandaloneConfig = new RedisStandaloneConfiguration();
+        redisStandaloneConfig.setPort(6379);
+        redisStandaloneConfig.setHostName("127.0.0.1");
+        redisStandaloneConfig.setPassword(RedisPassword.of("123456"));
+
+        //配置连接池
+        GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+        poolConfig.setMinIdle(2);
+        poolConfig.setMaxIdle(8);
+        poolConfig.setMaxTotal(150);
+        poolConfig.setMaxWaitMillis(60 * 1000);
+
+        //配置Lettuce
+        LettucePoolingClientConfiguration lettuceConfig = LettucePoolingClientConfiguration.builder()
+                .commandTimeout(Duration.ofSeconds(30))
+                .shutdownTimeout(Duration.ZERO)
+                .poolConfig(poolConfig)
+                .build();
+
+        RedisConnectionFactory factory = new LettuceConnectionFactory(redisStandaloneConfig, lettuceConfig);
+
+        redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(factory);
+        redisTemplate.setDefaultSerializer(new StringRedisSerializer());
+        redisTemplate.afterPropertiesSet();
     }
 
     /**
      * 加锁
-     * @param locaName       锁的key
-     * @param acquireTimeout 获取超时时间（毫秒）
-     * @param lockExpire     锁的超时时间（秒）
-     * @return 锁标识
+     *
+     * @param key 需要加锁的key
+     * @param expire key的过期时间
+     * @param timeUnit key的过期时间的时间单位
+     * @param waitSeconds 加锁过程的最大等待时间（单位：秒）
      */
-    public String lockWithTimeout(String locaName, long acquireTimeout, int lockExpire) {
-        try (Jedis conn = jedisPool.getResource()) {
-            String identifier = UUID.randomUUID().toString();
-            String lockKey = "lock:" + locaName;
-            long end = System.currentTimeMillis() + acquireTimeout;
-            while (System.currentTimeMillis() < end) {
-                if (conn.setnx(lockKey, identifier) == 1) { //setnx -> SET if Not eXist
-                    conn.expire(lockKey, lockExpire);
-                    return identifier;
+    public boolean lock(String key, long expire, TimeUnit timeUnit, long waitSeconds) {
+        String uuid = UUID.randomUUID().toString();
+
+        try {
+            long start = System.currentTimeMillis();
+            long end = waitSeconds * 1000;
+
+            do {
+                if (Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, uuid, expire, timeUnit))) {
+                    return true;
                 }
-                if (conn.ttl(lockKey) == -1) { // 返回-1代表key没有设置超时时间，为key设置一个超时时间
-                    conn.expire(lockKey, lockExpire);
-                }
-                try {
-                    Thread.sleep(10); //while周期不成功则休眠一下，防止一直提交
-                } catch (InterruptedException e) {
-                    //
-                }
-            }
-        } catch (JedisException e) {
-            return null;
+                Thread.sleep(100);
+            } while (System.currentTimeMillis() - start < end);
+        } catch (Exception e) {
+            log.error("lock failed! lockKey:{}", key, e);
         }
-        return null;
+
+        return false;
     }
 
     /**
      * 释放锁
-     * @param lockName   锁的key
-     * @param identifier 释放锁的标识
      */
-    public void releaseLock(String lockName, String identifier) {
-        String lockKey = "lock:" + lockName;
-        try (Jedis conn = jedisPool.getResource()) {
-            while (true) {
-                conn.watch(lockKey); //监视lock，准备开始事务
-                if (identifier.equals(conn.get(lockKey))) { //通过前面返回的value值判断是不是该锁，若是该锁，则删除，释放锁
-                    Transaction transaction = conn.multi();
-                    transaction.del(lockKey);
-                    List<Object> results = transaction.exec();
-                    if (results == null) {
-                        continue;
-                    }
-                }
-                conn.unwatch();
-                break;
-            }
-        } catch (JedisException e) {
-            e.printStackTrace();
+    public void release(String key) {
+        try {
+            redisTemplate.delete(key);
+        } catch (Exception e) {
+            log.error("release failed! lockKey:{}", key, e);
         }
-    }
-
-    public void closeJedis() {
-        jedisPool.close();
     }
 }
 
@@ -116,16 +120,19 @@ class SeckillServer {
     }
 
     public boolean order() {
+        String lockName = "resourceX";
         if (total == 0) { //防止多次调用
             System.out.println("秒杀结束！!无效访问: " + ++invalidNum);
             return false;
         }
-        String identifier = lock.lockWithTimeout("resourceX", 5000, 1);
+        if (!lock.lock(lockName, 5, TimeUnit.SECONDS, 2)) {
+            return false;
+        }
         if (total == 0) { //防止获得锁后total已经没有数量了
             System.out.println("秒杀结束**冗余锁竞争: " + ++lockNum);
             return false;
         }
-        if (StringUtils.isNotEmpty(identifier)) {
+        if (StringUtils.isNotEmpty(lockName)) {
             System.out.println(Thread.currentThread().getName() + "获得了锁");
             System.out.println(--total); //秒杀剩余数，分布式锁保证了total是线程安全的
             try {
@@ -133,7 +140,7 @@ class SeckillServer {
             } catch (InterruptedException e) {
                 //
             }
-            lock.releaseLock("resourceX", identifier);
+            lock.release(lockName);
         } else {
             order();
         }
@@ -166,7 +173,6 @@ class SeckillServer {
                     System.out.println("++++++++++++++++监听结束，共耗时：" + (System.currentTimeMillis() - startTime) + "毫秒");
                     executorService.shutdown();
                     monitorService.shutdown();
-                    seckillServer.lock.closeJedis();
                     return;
                 }
             }

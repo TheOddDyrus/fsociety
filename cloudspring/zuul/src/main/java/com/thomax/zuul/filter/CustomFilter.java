@@ -3,11 +3,8 @@ package com.thomax.zuul.filter;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.exception.ZuulException;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component
@@ -48,7 +45,7 @@ public class CustomFilter extends ZuulFilter {
     public Object run() throws ZuulException {
         RequestContext ctx = RequestContext.getCurrentContext();
         String t = ctx.getRequest().getParameter("t");
-        if(!StringUtils.isEmpty(t) && t.length() <= 2) {
+        if(t != null && t.trim().length() <= 2) {
             ctx.setSendZuulResponse(false);
             ctx.getResponse().setStatus(401);
 

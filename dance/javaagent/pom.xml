@@ -5,7 +5,7 @@
     <parent>
         <artifactId>dance</artifactId>
         <groupId>com.thomax</groupId>
-        <version>7777</version>
+        <version>∅</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

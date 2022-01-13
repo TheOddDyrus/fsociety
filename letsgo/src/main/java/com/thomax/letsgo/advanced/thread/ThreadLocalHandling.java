@@ -1,6 +1,6 @@
 package com.thomax.letsgo.advanced.thread;
 
-import com.thomax.letsgo.zoom.jdbc.util.DBUtils;
+import com.thomax.letsgo.zoom.db.DBUtils;
 
 import java.sql.Connection;
 import java.sql.SQLException;

@@ -1,4 +1,4 @@
-package com.thomax.letsgo.zoom.mybatis;
+package com.thomax.letsgo.zoom.db;
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.annotation.IdType;
