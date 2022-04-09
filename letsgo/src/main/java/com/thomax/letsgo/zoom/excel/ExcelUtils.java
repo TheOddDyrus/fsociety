@@ -18,7 +18,6 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,7 +29,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Excel工具（支持的数据类型：8个基础类型与包装类、java.util.Date、java.math.BigDecimal）
@@ -46,7 +44,7 @@ public class ExcelUtils {
 
     private static final File FILE = new File("C:\\Users\\Administrator\\Desktop\\123.xlsx");
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws Exception {
         ExcelExample excelExample = new ExcelExample();
         excelExample.setByteCell(Byte.MAX_VALUE);
         excelExample.setIntCell(Integer.MAX_VALUE);
@@ -61,12 +59,7 @@ public class ExcelUtils {
         ExcelUtils.writeExcel(fos, Arrays.asList(excelExample, excelExample));
 
         FileInputStream fis = new FileInputStream(FILE);
-        List<ExcelExample> list = null;
-        try {
-            list = ExcelUtils.readExcel(fis, ExcelExample.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        List<ExcelExample> list = ExcelUtils.readExcel(fis, ExcelExample.class);
         System.out.println(JSON.toJSONString(list));
     }
 
@@ -99,12 +92,16 @@ public class ExcelUtils {
      * @param outputStream 输出流
      * @param list 数据集
      */
-    public static void writeExcel(OutputStream outputStream, List<?> list) {
+    public static void writeExcel(OutputStream outputStream, List<?> list) throws Exception {
+        if (CollUtil.isEmpty(list)) {
+            throw new Exception("无数据");
+        }
+
         List<ExcelConfig> excelConfigList = getExcelConfig(list.get(0).getClass());
         ExcelWriter writer = ExcelUtil.getWriter(true).disableDefaultStyle();
 
-        //创建自定义单元格格式
-        CellStyle strStyle = createCellStyle(writer, "TEXT"); //TEXT或@都是指定文本类型
+        //创建文本类型的单元格格式
+        CellStyle textStyle = createTextCellStyle(writer);
 
         //设置列
         for (int i = 0; i < excelConfigList.size(); i++) {
@@ -112,7 +109,7 @@ public class ExcelUtils {
             //设置列名
             writer.writeCellValue(i, 0, config.getColumn().name());
             //设置列名的单元格格式格式
-            writer.setStyle(strStyle, i, 0);
+            writer.setStyle(textStyle, i, 0);
             //设置列宽度
             writer.setColumnWidth(i, config.getColumn().width());
         }
@@ -137,7 +134,7 @@ public class ExcelUtils {
                 writeCell4DateTime(writer, mapList, config, i);
             }
             //设置列的数据的单元格格式
-            setCellStyle(writer, strStyle, i, mapList.size());
+            setCellStyle(writer, textStyle, i, mapList.size());
         }
 
         writer.flush(outputStream);
@@ -172,9 +169,9 @@ public class ExcelUtils {
         }
     }
 
-    private static CellStyle createCellStyle(ExcelWriter writer, String format) {
+    private static CellStyle createTextCellStyle(ExcelWriter writer) {
         CellStyle cellStyle = writer.createCellStyle();
-        cellStyle.setDataFormat(writer.getWorkbook().createDataFormat().getFormat(format));
+        cellStyle.setDataFormat(writer.getWorkbook().createDataFormat().getFormat("TEXT")); //TEXT或@都是指定文本类型
         cellStyle.setAlignment(HorizontalAlignment.CENTER);
 
         Font font = writer.createFont();
