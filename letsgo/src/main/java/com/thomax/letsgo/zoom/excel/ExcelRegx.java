@@ -1,20 +1,22 @@
 package com.thomax.letsgo.zoom.excel;
 
 /**
- * Excel导入Excel校验的正则表达式
+ * Excel导入时校验的正则表达式
  */
-public enum ExcelRegx {
+public class ExcelRegx {
 
-    /*IS_NUMBER("", -1),
-    IS_NUMBER_6("", 6),
-    IS_NUMBER_20("", 20),
+     /*--------------------------------------------
+     |                  数值类型                 |
+     ============================================*/
 
-    private String regx;
+    public static final String NUMBER_3 = "";
 
-    ExcelRegx(String regx, int length) {
+    /*--------------------------------------------
+     |                  浮点类型                 |
+     ============================================*/
 
-    }
-
-    IS_NUMBER = "";*/
+    /*--------------------------------------------
+     |                  字符类型                 |
+     ============================================*/
 
 }

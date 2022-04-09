@@ -37,6 +37,11 @@ public @interface ExcelColumn {
     int exportDecimalLength() default 0;
 
     /**
+     * 导入的列名（没有设置默认使用name()作为列名）
+     */
+    String importName() default "";
+
+    /**
      * 导入的单元格是否可以为空
      */
     boolean importEmpty() default false;
