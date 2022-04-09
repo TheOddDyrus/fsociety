@@ -130,6 +130,13 @@
                 <version>3.2.0</version>
             </dependency>
 
+            <!-- poi -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>4.1.2</version>
+            </dependency>
+
             <!-- flink dependency start -->
             <dependency>
                 <groupId>org.apache.flink</groupId>
@@ -163,20 +170,6 @@
                 <version>2.11.11</version>
             </dependency>
             <!-- spark dependency end -->
-
-            <!-- poi dependency start -->
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml</artifactId>
-                <version>4.1.1</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml-schemas</artifactId>
-                <version>3.17</version>
-            </dependency>
-            <!-- poi dependency end -->
         </dependencies>
     </dependencyManagement>
 

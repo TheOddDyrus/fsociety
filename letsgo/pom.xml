@@ -55,6 +55,16 @@
             <artifactId>javax.mail-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+        </dependency>
+
         <!-- mybatis-plus dependency start -->
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -87,17 +97,6 @@
         </dependency>
         <!-- mybatis-plus dependency end -->
 
-        <!-- poi dependency start -->
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml-schemas</artifactId>
-        </dependency>
-        <!-- poi dependency end -->
     </dependencies>
 
 </project>
