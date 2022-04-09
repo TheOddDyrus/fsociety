@@ -20,13 +20,13 @@ public class ExcelExample {
     @ExcelColumn(name = "小数(double)", index = 4, exportDecimalLength = 3)
     private double doubleCell;
 
-    @ExcelColumn(name = "小数(big decimal)", index = 6, exportDecimalLength = 4)
+    @ExcelColumn(name = "小数(big decimal)", index = 6, exportDecimalLength = 4, width = 25)
     private BigDecimal bigDecimalCell;
 
-    @ExcelColumn(name = "日期", index = 7, exportFormat = ExcelFormat.DATE)
+    @ExcelColumn(name = "日期", index = 7, format = ExcelFormat.DATE)
     private Date dateCell;
 
-    @ExcelColumn(name = "日期时间", index = 8, exportFormat = ExcelFormat.DATETIME)
+    @ExcelColumn(name = "日期时间", index = 8, format = ExcelFormat.DATETIME)
     private Date datetimeCell;
 
     @ExcelColumn(name = "字符串", index = 9, width = 40)

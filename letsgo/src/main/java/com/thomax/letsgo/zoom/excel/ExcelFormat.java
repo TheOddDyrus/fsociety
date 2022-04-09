@@ -8,16 +8,6 @@ public enum ExcelFormat {
     NONE,
 
     /**
-     * 数值类型
-     */
-    NUMBER,
-
-    /**
-     * 浮点类型
-     */
-    DECIMAL,
-
-    /**
      * 日期类型，格式化样式: yyyy-MM-dd
      */
     DATE,

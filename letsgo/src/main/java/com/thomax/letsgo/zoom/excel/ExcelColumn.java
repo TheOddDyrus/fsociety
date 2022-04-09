@@ -27,14 +27,14 @@ public @interface ExcelColumn {
     int width() default 20;
 
     /**
-     * 导出的单元格格式
+     * 单元格格式
      */
-    ExcelFormat exportFormat() default ExcelFormat.NONE;
+    ExcelFormat format() default ExcelFormat.NONE;
 
     /**
-     * 导出的单元格格式小数的位数
+     * 导出的单元格保留小数的位数
      */
-    int exportDecimalLength() default 2;
+    int exportDecimalLength() default 0;
 
     /**
      * 导入的单元格是否可以为空
