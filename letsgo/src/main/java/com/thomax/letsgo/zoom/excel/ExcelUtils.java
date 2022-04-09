@@ -1,5 +1,6 @@
 package com.thomax.letsgo.zoom.excel;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ReflectUtil;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Excel工具（支持的实体类数据类型：8个基础类型与包装类、java.util.Date、java.math.BigDecimal）
@@ -41,9 +43,8 @@ public class ExcelUtils {
         excelExample.setByteCell(Byte.MAX_VALUE);
         excelExample.setIntCell(Integer.MAX_VALUE);
         excelExample.setLongCell(Long.MAX_VALUE);
-        excelExample.setDoubleCell1(123.123456d);
-        excelExample.setDoubleCell2(Double.MAX_VALUE);
-        excelExample.setBigDecimalCell(BigDecimal.valueOf(Double.MAX_VALUE));
+        excelExample.setDoubleCell(12345678901234.5d);
+        excelExample.setBigDecimalCell(new BigDecimal("0.1234567890987654321"));
         excelExample.setDateCell(DateUtil.parseDate("2022-11-11"));
         excelExample.setDatetimeCell(DateUtil.parseDateTime("2022-11-11 13:13:13"));
         excelExample.setStringCell("豫章故郡，洪都新府。星分翼轸，地接衡庐。襟三江而带五湖，控蛮荆而引瓯越");
@@ -106,6 +107,12 @@ public class ExcelUtils {
         //写入数据
         writer.write(list);
 
+        for (Object o : list) {
+            Map<String, Object> map = BeanUtil.beanToMap(o);
+            //writer.writeRow(map, false);
+            System.out.println(map);
+        }
+
         //创建自定义单元格格式
         CellStyle strStyle = createCellStyle(writer, "TEXT"); //TEXT或@都是指定文本类型
         CellStyle numberStyle = createCellStyle(writer, "0");
@@ -115,19 +122,20 @@ public class ExcelUtils {
         for (int i = 0; i < excelConfigList.size(); i++) {
             ExcelConfig config = excelConfigList.get(i);
             if (ExcelFormat.NONE.equals(config.getColumn().exportFormat())) {
-                if (Double.class.isAssignableFrom(config.getType()) ||
-                        Float.class.isAssignableFrom(config.getType()) ||
-                        BigDecimal.class.isAssignableFrom(config.getType())) {
-                    int length = config.getColumn().exportDecimalLength();
-                    String pre = "0.";
-                    String format = StrUtil.fillAfter(pre, '0', length + pre.length());
-                    CellStyle decimalStyle = createCellStyle(writer, format);
-                    setCellStyle(writer, decimalStyle, i, list.size());
-                } else if (Byte.class.isAssignableFrom(config.getType())) {
+                ExcelFormat excelFormat = ExcelBasicType.getExcelFormat(config.getType());
+                if (ExcelFormat.NUMBER.equals(excelFormat)) {
                     setCellStyle(writer, numberStyle, i, list.size());
+                } else if (ExcelFormat.DECIMAL.equals(excelFormat)) {
+                    CellStyle decimalStyle = createDecimalCellStyle(writer, config);
+                    setCellStyle(writer, decimalStyle, i, list.size());
                 } else {
                     setCellStyle(writer, strStyle, i, list.size());
                 }
+            } else if (ExcelFormat.NUMBER.equals(config.getColumn().exportFormat())) {
+                setCellStyle(writer, numberStyle, i, list.size());
+            } else if (ExcelFormat.DECIMAL.equals(config.getColumn().exportFormat())) {
+                CellStyle decimalStyle = createDecimalCellStyle(writer, config);
+                setCellStyle(writer, decimalStyle, i, list.size());
             } else if (ExcelFormat.DATE.equals(config.getColumn().exportFormat())) {
                 setCellStyle(writer, dateStyle, i, list.size());
             } else if (ExcelFormat.DATETIME.equals(config.getColumn().exportFormat())) {
@@ -147,6 +155,14 @@ public class ExcelUtils {
         cellStyle.setAlignment(HorizontalAlignment.CENTER);
 
         return cellStyle;
+    }
+
+    private static CellStyle createDecimalCellStyle(ExcelWriter writer, ExcelConfig config) {
+        int length = config.getColumn().exportDecimalLength();
+        String pre = "0.";
+        String format = StrUtil.fillAfter(pre, '0', length + pre.length());
+
+        return createCellStyle(writer, format);
     }
 
     private static void setCellStyle(ExcelWriter writer, CellStyle dateTimeStyle, int index, int total) {

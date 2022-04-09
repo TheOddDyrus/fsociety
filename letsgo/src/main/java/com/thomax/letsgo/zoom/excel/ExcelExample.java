@@ -17,13 +17,10 @@ public class ExcelExample {
     @ExcelColumn(name = "数值(long)", index = 3)
     private long longCell;
 
-    @ExcelColumn(name = "小数1(double)", index = 4, exportDecimalLength = 4)
-    private double doubleCell1;
+    @ExcelColumn(name = "小数(double)", index = 4, exportDecimalLength = 3)
+    private double doubleCell;
 
-    @ExcelColumn(name = "小数2(double)", index = 5, width = 25)
-    private double doubleCell2;
-
-    @ExcelColumn(name = "小数3(big decimal)", index = 6, width = 25)
+    @ExcelColumn(name = "小数(big decimal)", index = 6, exportDecimalLength = 4)
     private BigDecimal bigDecimalCell;
 
     @ExcelColumn(name = "日期", index = 7, exportFormat = ExcelFormat.DATE)
