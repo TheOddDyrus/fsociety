@@ -26,4 +26,19 @@ public @interface ImportColumn {
      */
     String format() default "";
 
+    /**
+     * 导入模板字段顺序
+     */
+    int templateIndex() default 0;
+
+    /**
+     * 导入模板单元格宽度
+     */
+    int templateWidth() default 20;
+
+    /**
+     * 导入模板中第一条数据的值
+     */
+    String templateExample() default "";
+
 }

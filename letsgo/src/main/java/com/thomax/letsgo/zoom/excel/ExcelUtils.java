@@ -31,11 +31,13 @@ import java.util.Map;
 /**
  * Excel工具（支持的数据类型：8个基础类型与包装类、java.util.Date、java.math.BigDecimal）
  *
- * 导出注解说明：
+ * 导出注解特别说明：
  * @see ExportColumn#format() 实体类中的日期字段必须设置此属性
  * @see ExportColumn#decimalLength() 自定义保留小数位数必须设置此属性
- * 导入注解说明：
- * @see ImportColumn#importName() 导入时默认使用name()作为列名，自定义列名必须设置此属性
+ * 导入注解特别说明：
+ * @see ImportColumn#templateIndex() 导出模板的顺序
+ * @see ImportColumn#templateWidth() 导出模板的单元格宽度
+ * @see ImportColumn#templateExample() 导出模板的第一条默认数据
  */
 public class ExcelUtils {
 
@@ -60,22 +62,23 @@ public class ExcelUtils {
         //创建文本类型的单元格格式
         CellStyle textStyle = createTextCellStyle(writer);
 
-        //设置列
         for (int i = 0; i < excelConfigList.size(); i++) {
             ExcelConfig config = excelConfigList.get(i);
-            //设置列名
-            writer.writeCellValue(i, 0, config.getExportColumn().name());
-            //设置列名的单元格格式格式
-            writer.setStyle(textStyle, i, 0);
             //设置列宽度
             writer.setColumnWidth(i, config.getExportColumn().width());
+            //设置整列的单元格格式
+            writer.setColumnStyle(i, textStyle);
+            //设置列名
+            writer.writeCellValue(i, 0, config.getExportColumn().name());
+            //设置列名的单元格格式
+            writer.setStyle(textStyle, i, 0);
         }
 
-        //设置列的数据的单元格格式和数据
         List<Map<String, Object>> mapList = new ArrayList<>(list.size());
         list.forEach(o -> mapList.add(BeanUtil.beanToMap(o)));
         for (int i = 0; i < excelConfigList.size(); i++) {
             ExcelConfig config = excelConfigList.get(i);
+            //设置列的数据
             if (ExcelFormat.NONE.equals(config.getExportColumn().format())) {
                 int length = config.getExportColumn().decimalLength();
                 if (length > 0) {
@@ -138,9 +141,9 @@ public class ExcelUtils {
         return cellStyle;
     }
 
-    private static void setCellStyle(ExcelWriter writer, CellStyle dateTimeStyle, int index, int total) {
+    private static void setCellStyle(ExcelWriter writer, CellStyle cellStyle, int index, int total) {
         for (int i = 0; i < total; i++) {
-            writer.setStyle(dateTimeStyle, index, i + 1);
+            writer.setStyle(cellStyle, index, i + 1);
         }
     }
 
@@ -206,6 +209,56 @@ public class ExcelUtils {
         }
 
         return list;
+    }
+
+    /**
+     * 下载导入模板
+     *
+     * @param outputStream 输出流
+     * @param type 类型
+     */
+    public static <T> void downloadTemplate(OutputStream outputStream, Class<T> type) {
+        List<ExcelConfig> excelConfigList = getImportConfig(type);
+        ExcelWriter writer = ExcelUtil.getWriter(true).disableDefaultStyle();
+
+        //创建文本类型的单元格格式
+        CellStyle textStyle = createTextCellStyle(writer);
+
+        for (int i = 0; i < excelConfigList.size(); i++) {
+            ExcelConfig config = excelConfigList.get(i);
+            //设置列宽度
+            writer.setColumnWidth(i, config.getImportColumn().templateWidth());
+            //设置整列的单元格格式
+            writer.setColumnStyle(i, textStyle);
+            //设置列名
+            writer.writeCellValue(i, 0, config.getImportColumn().name());
+            //设置列名的单元格格式
+            writer.setStyle(textStyle, i, 0);
+        }
+
+        for (int i = 0; i < excelConfigList.size(); i++) {
+            ExcelConfig config = excelConfigList.get(i);
+            //设置列的数据
+            writer.writeCellValue(i, 1, config.getImportColumn().templateExample());
+            //设置列的数据的单元格格式
+            writer.setStyle(textStyle, i, 1);
+        }
+
+        writer.flush(outputStream);
+        writer.close();
+    }
+
+    /**
+     * 下载导入模板
+     *
+     * @param outputStream 输出流
+     * @param path 根路径
+     */
+    public static void downloadTemplate(OutputStream outputStream, String path) {
+        ExcelWriter writer = ExcelUtil.getWriter(path);
+
+        writer.flush(outputStream);
+        writer.close();
     }
 
     //从实体类的注解中读取导入配置

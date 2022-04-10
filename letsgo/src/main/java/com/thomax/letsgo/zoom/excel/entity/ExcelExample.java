@@ -20,37 +20,39 @@ import java.util.List;
 public class ExcelExample {
 
     @ExportColumn(name = "数值(byte)", index = 1)
-    @ImportColumn(name = "数值(byte)")
+    @ImportColumn(name = "数值(byte)", templateIndex = 1, templateExample = "123")
     private Byte byteCell;
 
     @ExportColumn(name = "数值(int)", index = 2)
-    @ImportColumn(name = "数值(int)")
+    @ImportColumn(name = "数值(int)", templateIndex = 2, templateExample = "123456")
     private int intCell;
 
     @ExportColumn(name = "数值(long)", index = 3)
-    @ImportColumn(name = "数值(long)")
+    @ImportColumn(name = "数值(long)", templateIndex = 3, templateExample = "123456789")
     private Long longCell;
 
     @ExportColumn(name = "小数(double)", index = 4, decimalLength = 3)
-    @ImportColumn(name = "小数(double)")
+    @ImportColumn(name = "小数(double)", templateIndex = 4, templateExample = "123456.789")
     private double doubleCell;
 
     @ExportColumn(name = "小数(big decimal)", index = 6, decimalLength = 4, width = 25)
-    @ImportColumn(name = "小数(big decimal)")
+    @ImportColumn(name = "小数(big decimal)", templateIndex = 5, templateWidth = 25, templateExample = "123.456789")
     private BigDecimal bigDecimalCell;
 
     @ExportColumn(name = "日期", index = 7, format = ExcelFormat.DATE)
-    @ImportColumn(name = "日期")
+    @ImportColumn(name = "日期", templateIndex = 6, templateExample = "2022-11-11")
     private Date dateCell;
 
     @ExportColumn(name = "日期时间", index = 8, format = ExcelFormat.DATETIME)
-    @ImportColumn(name = "日期时间")
+    @ImportColumn(name = "日期时间", templateIndex = 7, templateExample = "2022-11-11 13:13:13")
     private Date datetimeCell;
 
     @ExportColumn(name = "字符串", index = 9, width = 40)
     private String stringCell;
 
     private static final File FILE = new File("C:\\Users\\Administrator\\Desktop\\123.xlsx");
+
+    private static final File TEMPLATE = new File("C:\\Users\\Administrator\\Desktop\\template.xlsx");
 
     public static void main(String[] args) throws Exception {
         ExcelExample excelExample = new ExcelExample();
@@ -69,6 +71,14 @@ public class ExcelExample {
         FileInputStream fis = new FileInputStream(FILE);
         List<ExcelExample> list = ExcelUtils.readExcel(fis, ExcelExample.class);
         System.out.println(JSON.toJSONString(list));
+
+        FileOutputStream fos2 = new FileOutputStream(TEMPLATE);
+        ExcelUtils.downloadTemplate(fos2, ExcelExample.class);
+
+        /*FileOutputStream fos3 = new FileOutputStream(TEMPLATE);
+        ExcelUtils.downloadTemplate(fos2, "template.xlsx");*/
+
+        System.out.println("操作结束");
     }
 
 }
