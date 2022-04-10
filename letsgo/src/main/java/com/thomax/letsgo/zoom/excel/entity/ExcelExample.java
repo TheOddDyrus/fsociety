@@ -66,16 +66,19 @@ public class ExcelExample {
         excelExample.setStringCell("群贤毕至，少长咸集。此地有崇山峻岭，茂林修竹，又有清流激湍，映带左右。");
 
         FileOutputStream fos = new FileOutputStream(FILE);
-        ExcelUtils.writeExcel(fos, Arrays.asList(excelExample, excelExample));
+        ExcelUtils.exportExcel(fos, Arrays.asList(excelExample, excelExample));
+
+        /*FileOutputStream fos2 = new FileOutputStream(FILE);
+        ExcelUtils.exportExcel(fos2, Arrays.asList(excelExample, excelExample), "template.xlsx", 1);*/
 
         FileInputStream fis = new FileInputStream(FILE);
-        List<ExcelExample> list = ExcelUtils.readExcel(fis, ExcelExample.class);
+        List<ExcelExample> list = ExcelUtils.importExcel(fis, ExcelExample.class);
         System.out.println(JSON.toJSONString(list));
 
-        FileOutputStream fos2 = new FileOutputStream(TEMPLATE);
-        ExcelUtils.downloadTemplate(fos2, ExcelExample.class);
-
         /*FileOutputStream fos3 = new FileOutputStream(TEMPLATE);
+        ExcelUtils.downloadTemplate(fos2, ExcelExample.class);*/
+
+       /* FileOutputStream fos4 = new FileOutputStream(TEMPLATE);
         ExcelUtils.downloadTemplate(fos2, "template.xlsx");*/
 
         System.out.println("操作结束");

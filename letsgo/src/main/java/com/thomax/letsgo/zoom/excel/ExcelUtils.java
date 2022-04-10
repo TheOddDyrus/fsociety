@@ -32,6 +32,7 @@ import java.util.Map;
  * Excel工具（支持的数据类型：8个基础类型与包装类、java.util.Date、java.math.BigDecimal）
  *
  * 导出注解特别说明：
+ * @see ExportColumn#name() 使用自定义模板导出时可以不用设置此属性，会根据index()序号导出
  * @see ExportColumn#format() 实体类中的日期字段必须设置此属性
  * @see ExportColumn#decimalLength() 自定义保留小数位数必须设置此属性
  * 导入注解特别说明：
@@ -46,12 +47,12 @@ public class ExcelUtils {
      ============================================*/
 
     /**
-     * 写入Excel
+     * 导出Excel
      *
      * @param outputStream 输出流
      * @param list 数据集
      */
-    public static void writeExcel(OutputStream outputStream, List<?> list) throws Exception {
+    public static void exportExcel(OutputStream outputStream, List<?> list) throws Exception {
         if (CollUtil.isEmpty(list)) {
             throw new Exception("无数据");
         }
@@ -84,14 +85,14 @@ public class ExcelUtils {
                 if (length > 0) {
                     String pre = "#.";
                     String format = StrUtil.fillAfter(pre, '#', length + pre.length());
-                    writeCell4Decimal(writer, mapList, config, i, format);
+                    writeCell4Decimal(writer, mapList, config, i, 1, format);
                 } else {
-                    writeCell(writer, mapList, config, i);
+                    writeCell(writer, mapList, config, i, 1);
                 }
             } else if (ExcelFormat.DATE.equals(config.getExportColumn().format())) {
-                writeCell4Date(writer, mapList, config, i);
+                writeCell4Date(writer, mapList, config, i, 1);
             } else if (ExcelFormat.DATETIME.equals(config.getExportColumn().format())) {
-                writeCell4DateTime(writer, mapList, config, i);
+                writeCell4DateTime(writer, mapList, config, i, 1);
             }
             //设置列的数据的单元格格式
             setCellStyle(writer, textStyle, i, mapList.size());
@@ -101,31 +102,77 @@ public class ExcelUtils {
         writer.close();
     }
 
-    private static void writeCell(ExcelWriter writer, List<Map<String, Object>> list, ExcelConfig config, int index) {
+    /**
+     * 导出Excel
+     *
+     * @param outputStream 输出流
+     * @param list 数据集
+     * @param path 模板的根路径
+     * @param startRow 从第几行开始写入数据（Excel内第一行为0）
+     */
+    public static void exportExcel(OutputStream outputStream, List<?> list, String path, int startRow) throws Exception {
+        if (CollUtil.isEmpty(list)) {
+            throw new Exception("无数据");
+        }
+
+        List<ExcelConfig> excelConfigList = getExportConfig(list.get(0).getClass());
+        ExcelWriter writer = ExcelUtil.getWriter(path).disableDefaultStyle();
+
+        //创建文本类型的单元格格式
+        CellStyle textStyle = createTextCellStyle(writer);
+
+        List<Map<String, Object>> mapList = new ArrayList<>(list.size());
+        list.forEach(o -> mapList.add(BeanUtil.beanToMap(o)));
+        for (int i = 0; i < excelConfigList.size(); i++) {
+            ExcelConfig config = excelConfigList.get(i);
+            //设置列的数据
+            if (ExcelFormat.NONE.equals(config.getExportColumn().format())) {
+                int length = config.getExportColumn().decimalLength();
+                if (length > 0) {
+                    String pre = "#.";
+                    String format = StrUtil.fillAfter(pre, '#', length + pre.length());
+                    writeCell4Decimal(writer, mapList, config, i, startRow, format);
+                } else {
+                    writeCell(writer, mapList, config, i, startRow);
+                }
+            } else if (ExcelFormat.DATE.equals(config.getExportColumn().format())) {
+                writeCell4Date(writer, mapList, config, i, startRow);
+            } else if (ExcelFormat.DATETIME.equals(config.getExportColumn().format())) {
+                writeCell4DateTime(writer, mapList, config, i, startRow);
+            }
+            //设置列的数据的单元格格式
+            setCellStyle(writer, textStyle, i, mapList.size());
+        }
+
+        writer.flush(outputStream);
+        writer.close();
+    }
+
+    private static void writeCell(ExcelWriter writer, List<Map<String, Object>> list, ExcelConfig config, int index, int startRow) {
         for (int i = 0; i < list.size(); i++) {
             Map<String, Object> map = list.get(i);
-            writer.writeCellValue(index, i + 1, StrUtil.toStringOrNull(map.get(config.getProp())));
+            writer.writeCellValue(index, i + startRow, StrUtil.toStringOrNull(map.get(config.getProp())));
         }
     }
 
-    private static void writeCell4Decimal(ExcelWriter writer, List<Map<String, Object>> list, ExcelConfig config, int index, String format) {
+    private static void writeCell4Decimal(ExcelWriter writer, List<Map<String, Object>> list, ExcelConfig config, int index, int startRow, String format) {
         for (int i = 0; i < list.size(); i++) {
             Map<String, Object> map = list.get(i);
-            writer.writeCellValue(index, i + 1, NumberUtil.decimalFormat(format, map.get(config.getProp())));
+            writer.writeCellValue(index, i + startRow, NumberUtil.decimalFormat(format, map.get(config.getProp())));
         }
     }
 
-    private static void writeCell4Date(ExcelWriter writer, List<Map<String, Object>> list, ExcelConfig config, int index) {
+    private static void writeCell4Date(ExcelWriter writer, List<Map<String, Object>> list, ExcelConfig config, int index, int startRow) {
         for (int i = 0; i < list.size(); i++) {
             Map<String, Object> map = list.get(i);
-            writer.writeCellValue(index, i + 1, DateUtil.format((Date) map.get(config.getProp()), "yyyy-MM-dd"));
+            writer.writeCellValue(index, i + startRow, DateUtil.format((Date) map.get(config.getProp()), "yyyy-MM-dd"));
         }
     }
 
-    private static void writeCell4DateTime(ExcelWriter writer, List<Map<String, Object>> list, ExcelConfig config, int index) {
+    private static void writeCell4DateTime(ExcelWriter writer, List<Map<String, Object>> list, ExcelConfig config, int index, int startRow) {
         for (int i = 0; i < list.size(); i++) {
             Map<String, Object> map = list.get(i);
-            writer.writeCellValue(index, i + 1, DateUtil.format((Date) map.get(config.getProp()), "yyyy-MM-dd HH:mm:ss"));
+            writer.writeCellValue(index, i + startRow, DateUtil.format((Date) map.get(config.getProp()), "yyyy-MM-dd HH:mm:ss"));
         }
     }
 
@@ -176,7 +223,7 @@ public class ExcelUtils {
      * @param inputStream 输入流
      * @param type 类型
      */
-    public static <T> List<T> readExcel(InputStream inputStream, Class<T> type) throws Exception {
+    public static <T> List<T> importExcel(InputStream inputStream, Class<T> type) throws Exception {
         ExcelReader reader = ExcelUtil.getReader(inputStream);
         List<ExcelConfig> excelConfigList = getImportConfig(type);
         excelConfigList.forEach((o) -> reader.addHeaderAlias(o.getImportColumn().name(), o.getProp()));
@@ -252,7 +299,7 @@ public class ExcelUtils {
      * 下载导入模板
      *
      * @param outputStream 输出流
-     * @param path 根路径
+     * @param path 模板的根路径
      */
     public static void downloadTemplate(OutputStream outputStream, String path) {
         ExcelWriter writer = ExcelUtil.getWriter(path);
