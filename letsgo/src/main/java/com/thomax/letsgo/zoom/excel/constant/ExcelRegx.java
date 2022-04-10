@@ -1,4 +1,4 @@
-package com.thomax.letsgo.zoom.excel;
+package com.thomax.letsgo.zoom.excel.constant;
 
 /**
  * Excel导入时校验的正则表达式

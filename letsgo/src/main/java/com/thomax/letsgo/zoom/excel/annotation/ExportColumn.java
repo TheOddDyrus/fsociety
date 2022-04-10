@@ -1,4 +1,6 @@
-package com.thomax.letsgo.zoom.excel;
+package com.thomax.letsgo.zoom.excel.annotation;
+
+import com.thomax.letsgo.zoom.excel.constant.ExcelFormat;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -9,7 +11,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ExcelColumn {
+public @interface ExportColumn {
 
     /**
      * 列名
@@ -32,23 +34,8 @@ public @interface ExcelColumn {
     ExcelFormat format() default ExcelFormat.NONE;
 
     /**
-     * 导出的单元格保留小数的位数
+     * 保留小数的位数
      */
-    int exportDecimalLength() default 0;
-
-    /**
-     * 导入的列名（没有设置默认使用name()作为列名）
-     */
-    String importName() default "";
-
-    /**
-     * 导入的单元格是否可以为空
-     */
-    boolean importEmpty() default false;
-
-    /**
-     * 导入的单元格格式校验（正则表达式）
-     */
-    String importFormat() default "";
+    int decimalLength() default 0;
 
 }
