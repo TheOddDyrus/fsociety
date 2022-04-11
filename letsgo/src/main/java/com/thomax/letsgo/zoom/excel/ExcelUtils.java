@@ -274,14 +274,18 @@ public class ExcelUtils {
                 }
                 //检查是否为空
                 if (!config.getImportColumn().enableEmpty() && StrUtil.isBlank(value)) {
-                    throw new Exception("第" + (i + 2) + "行数据不能为空");
+                    throw new Exception(StrUtil.format("第{}行数据的列【{}】不能为空",
+                            i + startIndex + 1,
+                            getHeaderName(config, false)));
                 }
                 //检查是否匹配正则表达式
                 if (StrUtil.isNotBlank(value)) {
                     String format = config.getImportColumn().format();
                     if (StrUtil.isNotBlank(format)) {
-                        if (!ReUtil.isMatch(format, String.valueOf(obj))) {
-                            throw new Exception("第" + (i + 2) + "行数据格式不正确");
+                        if (!ReUtil.isMatch(format, value)) {
+                            throw new Exception(StrUtil.format("第{}行数据的列【{}】格式不正确",
+                                    i + startIndex + 1,
+                                    getHeaderName(config, false)));
                         }
                     }
                 }
