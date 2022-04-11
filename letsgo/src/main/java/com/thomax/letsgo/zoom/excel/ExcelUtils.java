@@ -287,7 +287,7 @@ public class ExcelUtils {
                 }
             }
 
-            T entity = BeanUtil.mapToBean(map, type, true, copyOptions);
+            T entity = BeanUtil.mapToBean(map, type, false, copyOptions);
             list.add(entity);
         }
 
