@@ -283,7 +283,7 @@ public class ExcelUtils {
                     String format = config.getImportColumn().format();
                     if (StrUtil.isNotBlank(format)) {
                         if (!ReUtil.isMatch(format, value)) {
-                            throw new Exception(StrUtil.format("第{}行数据的列【{}】格式不正确",
+                            throw new Exception(StrUtil.format("第{}行数据的列【{}】格式不正确或超出范围",
                                     i + startIndex + 1,
                                     getHeaderName(config, false)));
                         }
