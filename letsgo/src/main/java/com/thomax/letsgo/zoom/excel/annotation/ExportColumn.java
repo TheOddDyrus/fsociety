@@ -19,6 +19,11 @@ public @interface ExportColumn {
     String name() default "未命名";
 
     /**
+     * 国际化的Key
+     */
+    String i18nKey() default "";
+
+    /**
      * 序号
      */
     int index() default 0;

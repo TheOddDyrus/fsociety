@@ -76,10 +76,10 @@ public class ExcelExample {
         System.out.println(JSON.toJSONString(list));
 
         /*FileOutputStream fos3 = new FileOutputStream(TEMPLATE);
-        ExcelUtils.downloadTemplate(fos2, ExcelExample.class);*/
+        ExcelUtils.downloadTemplate(fos3, ExcelExample.class);*/
 
        /* FileOutputStream fos4 = new FileOutputStream(TEMPLATE);
-        ExcelUtils.downloadTemplate(fos2, "template.xlsx");*/
+        ExcelUtils.downloadTemplate(fos4, "template.xlsx");*/
 
         System.out.println("操作结束");
     }

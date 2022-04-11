@@ -17,6 +17,11 @@ public @interface ImportColumn {
     String name() default "";
 
     /**
+     * 国际化的Key
+     */
+    String i18nKey() default "";
+
+    /**
      * 是否支持为空
      */
     boolean enableEmpty() default false;
