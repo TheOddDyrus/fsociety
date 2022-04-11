@@ -39,7 +39,7 @@ import java.util.function.Function;
  * @see ExportColumn#decimalLength() 自定义保留小数位数必须设置此属性
  *
  * 导入注解特别说明：
- * @see ImportColumn#i18nKey() 定义I18nUtil.getMessage()所使用的Key，Key存在时name()属性会失效
+ * @see ImportColumn#i18nKey() 国际化的Key，定义以后会被I18nUtil.getMessage()所使用并获得对于国际化内容，Key设置后name()属性会失效
  *
  * 下载导入的Excel模板，可以使用以下配置自动生成模板：
  * @see ImportColumn#templateIndex() 导出模板的顺序
@@ -180,7 +180,7 @@ public class ExcelUtils {
         }
     }
 
-    //获得列名
+    //获得列名（支持国际化）
     private static String getHeaderName(ExcelConfig config, boolean isExport) {
         String header = null;
         String i18nKey;
