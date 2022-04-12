@@ -25,11 +25,16 @@ public class ExcelRegx {
      |                  浮点类型                 |
      ============================================*/
 
-    //浮点
+    //浮点，整数位+小数位
     private static final String DECIMAL = "^([1-9]+[0-9]{0,m}*)+(.[0-9]{1,n})?$";
 
     //浮点，整数长度最大15，浮点长度最大3
     public static final String DECIMAL_15_3 = DECIMAL.replace("m", "15").replace("n", "3");
+
+    //浮点，小数位
+    private static final String DECIMAL_M = "^([0-9]*)+(.[0-9]{1,n})?$";
+
+    public static final String DECIMAL_M_3 = DECIMAL_M.replace("n", "3");
 
     /*--------------------------------------------
      |                  字符类型                 |
@@ -48,13 +53,13 @@ public class ExcelRegx {
      |                  日期类型                 |
      ============================================*/
 
-    //日期
+    //日期(yyyy-MM-dd)
     public static final String DATE = "^([0-9]{4}-(((0[13578]|(10|12))-(0[1-9]|[1-2][0-9]|3[0-1]))|(02-(0[1-9]|[1-2][0-9]))|((0[469]|11)-(0[1-9]|[1-2][0-9]|30))))$";
 
-    //时间
+    //时间(HH:mm:ss)
     public static final String TIME = "^((([1-9]{1})|([0-1][0-9])|([1-2][0-3])):([0-5][0-9]):([0-5][0-9]))$";
 
-    //日期时间
+    //日期时间(yyyy-MM-dd HH:mm:ss)
     public static final String DATE_TIME = DATE.replace("$", "") + "\\s" + TIME.replace("^", "");
 
 }
