@@ -6,6 +6,61 @@ import java.util.regex.PatternSyntaxException;
 
 public class RegularExpressions {
 
+     /*--------------------------------------------
+     |                  数值类型                 |
+     ============================================*/
+
+	//自增ID
+	private static final String ID = "^[1-9]+[0-9]{0,n}$";
+
+	//自增ID，最大长度3
+	public static final String ID_3 = ID.replace("n", "3");
+
+	//自增ID，最大长度11
+	public static final String ID_11 = ID.replace("n", "11");
+
+	//自增ID，最大长度20
+	public static final String ID_20 = ID.replace("n", "20");
+
+    /*--------------------------------------------
+     |                  浮点类型                 |
+     ============================================*/
+
+	//浮点，整数位+小数位
+	private static final String DECIMAL = "^([1-9]+[0-9]{0,m}*)+(.[0-9]{1,n})?$";
+
+	//浮点，整数长度最大15，浮点长度最大3
+	public static final String DECIMAL_15_3 = DECIMAL.replace("m", "15").replace("n", "3");
+
+	//浮点，小数位
+	private static final String DECIMAL_M = "^([0-9]*)+(.[0-9]{1,n})?$";
+
+	public static final String DECIMAL_M_3 = DECIMAL_M.replace("n", "3");
+
+    /*--------------------------------------------
+     |                  字符类型                 |
+     ============================================*/
+
+	//任意字符串
+	private static final String STR = "^.{1,n}$";
+
+	//任意字符串，最大长度100
+	public static final String STR_100 = STR.replace("n", "100");
+
+    /*--------------------------------------------
+     |                  日期类型                 |
+     ============================================*/
+
+	//日期(yyyy-MM-dd)
+	public static final String DATE = "^([0-9]{4}-(((0[13578]|(10|12))-(0[1-9]|[1-2][0-9]|3[0-1]))|(02-(0[1-9]|[1-2][0-9]))|((0[469]|11)-(0[1-9]|[1-2][0-9]|30))))$";
+
+	//时间(HH:mm:ss)
+	public static final String TIME = "^((([1-9]{1})|([0-1][0-9])|([1-2][0-3])):([0-5][0-9]):([0-5][0-9]))$";
+
+	//日期时间(yyyy-MM-dd HH:mm:ss)
+	public static final String DATE_TIME = DATE.replace("$", "") + "\\s" + TIME.replace("^", "");
+
+
 	public static void main(String[] args) throws PatternSyntaxException {
 
        String REGEX = "\\bcat(1|2)?\\b";
@@ -27,8 +82,8 @@ public class RegularExpressions {
        m.appendTail(sb);
        System.out.println("sb: " + sb);
 	}
-}
 
+}
 
 /**正则表达式标准用法*/
 //注意在Java里面需要两个反斜线\\代表一个正则表达式的反斜线
@@ -112,6 +167,7 @@ class BasicRegex {
 			System.out.println(pse.getMessage());  //返回多行字符串，包含语法错误及其索引的描述、错误的正则表达式模式和模式中错误索引的可视化指示
 		}
 	}
+
 }
 
 

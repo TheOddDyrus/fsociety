@@ -50,26 +50,19 @@ public class ExcelExample {
     @ExportColumn(name = "字符串", index = 9, width = 40)
     private String stringCell;
 
+    @ExportColumn(name = "超文本链接", format = ExcelFormat.HYPERLINK_FILE, index = 20)
+    private String fileCell;
+
     private static final File FILE = new File("C:\\Users\\Administrator\\Desktop\\123.xlsx");
 
     private static final File TEMPLATE = new File("C:\\Users\\Administrator\\Desktop\\template.xlsx");
 
     public static void main(String[] args) throws Exception {
-        ExcelExample excelExample = new ExcelExample();
-        excelExample.setByteCell(Byte.MAX_VALUE);
-        excelExample.setIntCell(Integer.MAX_VALUE);
-        excelExample.setLongCell(Long.MAX_VALUE);
-        excelExample.setDoubleCell(12345678901234.1234567d);
-        excelExample.setBigDecimalCell(new BigDecimal("1234567890987654321.1234567890987654321"));
-        excelExample.setDateCell(DateUtil.parseDate("2022-11-11"));
-        excelExample.setDatetimeCell(DateUtil.parseDateTime("2022-11-11 13:13:13"));
-        excelExample.setStringCell("群贤毕至，少长咸集。此地有崇山峻岭，茂林修竹，又有清流激湍，映带左右。");
-
         FileOutputStream fos = new FileOutputStream(FILE);
-        ExcelUtils.exportExcel(fos, Arrays.asList(excelExample, excelExample));
+        ExcelUtils.exportExcel(fos, createData());
 
         /*FileOutputStream fos2 = new FileOutputStream(FILE);
-        ExcelUtils.exportExcel(fos2, Arrays.asList(excelExample, excelExample), "template.xlsx", 1);*/
+        ExcelUtils.exportExcel(fos2, createData(), "template.xlsx", 1);*/
 
         FileInputStream fis = new FileInputStream(FILE);
         List<ExcelExample> list = ExcelUtils.importExcel(fis, ExcelExample.class);
@@ -82,6 +75,21 @@ public class ExcelExample {
         ExcelUtils.downloadTemplate(fos4, "template.xlsx");*/
 
         System.out.println("操作结束");
+    }
+
+    private static List<ExcelExample> createData() {
+        ExcelExample excelExample = new ExcelExample();
+        excelExample.setByteCell(Byte.MAX_VALUE);
+        excelExample.setIntCell(Integer.MAX_VALUE);
+        excelExample.setLongCell(Long.MAX_VALUE);
+        excelExample.setDoubleCell(12345678901234.1234567d);
+        excelExample.setBigDecimalCell(new BigDecimal("1234567890987654321.1234567890987654321"));
+        excelExample.setDateCell(DateUtil.parseDate("2022-11-11"));
+        excelExample.setDatetimeCell(DateUtil.parseDateTime("2022-11-11 13:13:13"));
+        excelExample.setStringCell("群贤毕至，少长咸集。此地有崇山峻岭，茂林修竹，又有清流激湍，映带左右。");
+        excelExample.setFileCell("1122.png");
+
+        return Arrays.asList(excelExample, excelExample);
     }
 
 }

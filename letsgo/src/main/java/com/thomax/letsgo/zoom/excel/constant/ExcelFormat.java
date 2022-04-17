@@ -17,4 +17,14 @@ public enum ExcelFormat {
      */
     DATETIME,
 
+    /**
+     * 超文本链接（文件绝对路径）
+     */
+    HYPERLINK_FILE,
+
+    /**
+     * 超文本链接（URL）
+     */
+    HYPERLINK_URL,
+
 }

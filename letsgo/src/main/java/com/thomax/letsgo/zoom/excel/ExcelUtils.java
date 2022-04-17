@@ -3,7 +3,6 @@ package com.thomax.letsgo.zoom.excel;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.ReflectUtil;
@@ -14,17 +13,20 @@ import cn.hutool.poi.excel.ExcelWriter;
 import com.thomax.letsgo.zoom.excel.annotation.ExportColumn;
 import com.thomax.letsgo.zoom.excel.annotation.ImportColumn;
 import com.thomax.letsgo.zoom.excel.entity.ExcelConfig;
-import com.thomax.letsgo.zoom.excel.constant.ExcelFormat;
+import org.apache.poi.common.usermodel.HyperlinkType;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.Hyperlink;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -40,11 +42,14 @@ import java.util.function.Function;
  *
  * 导入注解特别说明：
  * @see ImportColumn#i18nKey() 国际化的Key，定义以后会被I18nUtil.getMessage()所使用并获得对于国际化内容，Key设置后name()属性会失效
+ * @see ImportColumn#format() 正则表达式匹配数据，可以使用com.sf.air.service.frame.constant.NormalRegx
  *
  * 下载导入的Excel模板，可以使用以下配置自动生成模板：
  * @see ImportColumn#templateIndex() 导出模板的顺序
  * @see ImportColumn#templateWidth() 导出模板的单元格宽度
  * @see ImportColumn#templateExample() 导出模板的第一条默认数据
+ *
+ * 演示案例：单元测试目录下的com.sf.air.service.frame.ExcelTest#test()
  */
 public class ExcelUtils {
 
@@ -58,9 +63,9 @@ public class ExcelUtils {
      * @param outputStream 输出流
      * @param list 数据集
      */
-    public static void exportExcel(OutputStream outputStream, List<?> list) throws Exception {
+    public static void exportExcel(OutputStream outputStream, List<?> list) {
         if (CollUtil.isEmpty(list)) {
-            throw new Exception("无数据");
+            throw new RuntimeException("无数据");
         }
 
         ExcelWriter writer = ExcelUtil.getWriter(true).disableDefaultStyle();
@@ -76,7 +81,7 @@ public class ExcelUtils {
      * @param list 数据集
      * @param path 模板相对于Resource目录的路径
      */
-    public static void exportExcel(OutputStream outputStream, List<?> list, String path) throws Exception {
+    public static void exportExcel(OutputStream outputStream, List<?> list, String path) {
         exportExcel(outputStream, list, path, 1);
     }
 
@@ -88,9 +93,9 @@ public class ExcelUtils {
      * @param path 模板相对于Resource目录的路径
      * @param startIndex 从下标N开始写入数据（Excel内第一行的下标为0）
      */
-    public static void exportExcel(OutputStream outputStream, List<?> list, String path, int startIndex) throws Exception {
+    public static void exportExcel(OutputStream outputStream, List<?> list, String path, int startIndex) {
         if (CollUtil.isEmpty(list)) {
-            throw new Exception("无数据");
+            throw new RuntimeException("无数据");
         }
 
         ExcelWriter writer = ExcelUtil.getWriter(path).disableDefaultStyle();
@@ -107,19 +112,15 @@ public class ExcelUtils {
         //创建文本类型的单元格格式
         CellStyle headerStyle = createCellStyle(writer, true);
         CellStyle normalStyle = createCellStyle(writer, false);
+        //创建超文本类型的创建器
+        CreationHelper creationHelper = writer.getWorkbook().getCreationHelper();
+
+        //创建日期时间格式器
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         if (!useTemplate) {
-            for (int i = 0; i < excelConfigList.size(); i++) {
-                ExcelConfig config = excelConfigList.get(i);
-                //设置列宽度
-                writer.setColumnWidth(i, config.getExportColumn().width());
-                //设置整列的单元格格式
-                writer.setColumnStyle(i, normalStyle);
-                //设置列名
-                writer.writeCellValue(i, 0, getHeaderName(config, true));
-                //设置列名的单元格格式
-                writer.setStyle(headerStyle, i, 0);
-            }
+            setHeader(writer, excelConfigList, headerStyle, normalStyle, true);
         }
 
         List<Map<String, Object>> mapList = new ArrayList<>(list.size());
@@ -127,26 +128,48 @@ public class ExcelUtils {
         for (int i = 0; i < excelConfigList.size(); i++) {
             ExcelConfig config = excelConfigList.get(i);
             //设置列的数据
-            if (ExcelFormat.NONE.equals(config.getExportColumn().format())) {
-                int length = config.getExportColumn().decimalLength();
-                if (length > 0) {
-                    String pre = "#.";
-                    String format = StrUtil.fillAfter(pre, '#', length + pre.length());
-                    setCellValue(writer, mapList, config, i, startIndex, o -> NumberUtil.decimalFormat(format, o));
-                } else {
-                    setCellValue(writer, mapList, config, i, startIndex, StrUtil::toStringOrNull);
-                }
-            } else if (ExcelFormat.DATE.equals(config.getExportColumn().format())) {
-                setCellValue(writer, mapList, config, i, startIndex, o -> DateUtil.format((Date) o, "yyyy-MM-dd"));
-            } else if (ExcelFormat.DATETIME.equals(config.getExportColumn().format())) {
-                setCellValue(writer, mapList, config, i, startIndex, o -> DateUtil.format((Date) o, "yyyy-MM-dd HH:mm:ss"));
+            switch (config.getExportColumn().format()) {
+                case NONE:
+                    int length = config.getExportColumn().decimalLength();
+                    if (length > 0) {
+                        String pre = "#.";
+                        String format = StrUtil.fillAfter(pre, '#', length + pre.length());
+                        setCellValue(writer, mapList, config, i, startIndex, o -> NumberUtil.decimalFormat(format, o));
+                    } else {
+                        setCellValue(writer, mapList, config, i, startIndex, StrUtil::toStringOrNull);
+                    }
+                    break;
+                case DATE:
+                    setCellValue(writer, mapList, config, i, startIndex, dateFormat::format);
+                    break;
+                case DATETIME:
+                    setCellValue(writer, mapList, config, i, startIndex,  dateTimeFormat::format);
+                    break;
+                case HYPERLINK_FILE:
+                    setCellValue4Hyperlink(writer, mapList, config, i, startIndex, o -> {
+                        String value = StrUtil.toStringOrNull(o);
+                        Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.FILE);
+                        hyperlink.setAddress("./" + value); //设置文件与Excel在同一文件夹下
+
+                        return new Object[] {value, hyperlink};
+                    });
+                    break;
+                case HYPERLINK_URL:
+                    setCellValue4Hyperlink(writer, mapList, config, i, startIndex, o -> {
+                        String value = StrUtil.toStringOrNull(o);
+                        Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
+                        hyperlink.setAddress(value);
+
+                        return new Object[] {value, hyperlink};
+                    });
+                    break;
             }
             //设置列的数据的单元格格式
             setCellStyle(writer, normalStyle, i, mapList.size());
         }
     }
 
-    //创建单元格格式
+    //创建文本单元格格式
     private static CellStyle createCellStyle(ExcelWriter writer, boolean isHeader) {
         CellStyle cellStyle = writer.createCellStyle();
         cellStyle.setDataFormat(writer.getWorkbook().createDataFormat().getFormat("TEXT")); //TEXT或@都是指定文本类型
@@ -155,7 +178,6 @@ public class ExcelUtils {
         } else {
             cellStyle.setAlignment(HorizontalAlignment.LEFT);
         }
-
 
         Font font = writer.createFont();
         font.setFontName("宋体");
@@ -180,9 +202,39 @@ public class ExcelUtils {
         }
     }
 
+    //设置单元格数据（本地文件的超文本链接）
+    private static void setCellValue4Hyperlink(ExcelWriter writer, List<Map<String, Object>> list, ExcelConfig config,
+                                     int index, int startRow, Function<Object, Object[]> function) {
+        for (int i = 0; i < list.size(); i++) {
+            Map<String, Object> map = list.get(i);
+            Object[] valueArr = function.apply(map.get(config.getProp()));
+
+            Cell cell = writer.getOrCreateCell(index, i + startRow);
+            cell.setCellValue((String) valueArr[0]);
+            cell.setHyperlink((Hyperlink) valueArr[1]);
+        }
+    }
+
+    //设置列
+    private static void setHeader(ExcelWriter writer, List<ExcelConfig> excelConfigList,
+                                  CellStyle headerStyle, CellStyle normalStyle, boolean isExport) {
+        for (int i = 0; i < excelConfigList.size(); i++) {
+            ExcelConfig config = excelConfigList.get(i);
+            //设置列宽度
+            int width = isExport ? config.getExportColumn().width() : config.getImportColumn().templateWidth();
+            writer.setColumnWidth(i, width);
+            //设置整列的单元格格式
+            writer.setColumnStyle(i, normalStyle);
+            //设置列名
+            writer.writeCellValue(i, 0, getHeaderName(config, isExport));
+            //设置列名的单元格格式
+            writer.setStyle(headerStyle, i, 0);
+        }
+    }
+
     //获得列名（支持国际化）
     private static String getHeaderName(ExcelConfig config, boolean isExport) {
-        String header = null;
+        String header;
         String i18nKey;
 
         if (isExport) {
@@ -192,7 +244,7 @@ public class ExcelUtils {
         }
 
         if (StrUtil.isNotBlank(i18nKey)) {
-            //header = I18nUtil.getMessage("sendShort.25");
+            header = i18nKey; //I18nUtil.getMessage(i18nKey);
         } else {
             if (isExport) {
                 header = config.getExportColumn().name();
@@ -240,7 +292,7 @@ public class ExcelUtils {
      * @param inputStream 输入流
      * @param type 类型
      */
-    public static <T> List<T> importExcel(InputStream inputStream, Class<T> type) throws Exception {
+    public static <T> List<T> importExcel(InputStream inputStream, Class<T> type) {
         return importExcel(inputStream, type, 1);
     }
 
@@ -251,7 +303,7 @@ public class ExcelUtils {
      * @param type 类型
      * @param startIndex 从下标N开始读取数据（Excel内第一行的下标为0）
      */
-    public static <T> List<T> importExcel(InputStream inputStream, Class<T> type, int startIndex) throws Exception {
+    public static <T> List<T> importExcel(InputStream inputStream, Class<T> type, int startIndex) {
         ExcelReader reader = ExcelUtil.getReader(inputStream);
         List<ExcelConfig> excelConfigList = getImportConfig(type);
         excelConfigList.forEach((o) -> reader.addHeaderAlias(getHeaderName(o, false), o.getProp()));
@@ -274,7 +326,7 @@ public class ExcelUtils {
                 }
                 //检查是否为空
                 if (!config.getImportColumn().enableEmpty() && StrUtil.isBlank(value)) {
-                    throw new Exception(StrUtil.format("第{}行数据的列【{}】不能为空",
+                    throw new RuntimeException(StrUtil.format("第{}行数据的列【{}】不能为空",
                             i + startIndex + 1,
                             getHeaderName(config, false)));
                 }
@@ -283,7 +335,7 @@ public class ExcelUtils {
                     String format = config.getImportColumn().format();
                     if (StrUtil.isNotBlank(format)) {
                         if (!ReUtil.isMatch(format, value)) {
-                            throw new Exception(StrUtil.format("第{}行数据的列【{}】格式不正确或超出范围",
+                            throw new RuntimeException(StrUtil.format("第{}行数据的列【{}】格式不正确或超出范围",
                                     i + startIndex + 1,
                                     getHeaderName(config, false)));
                         }
@@ -338,15 +390,7 @@ public class ExcelUtils {
         CellStyle normalStyle = createCellStyle(writer, false);
 
         for (int i = 0; i < excelConfigList.size(); i++) {
-            ExcelConfig config = excelConfigList.get(i);
-            //设置列宽度
-            writer.setColumnWidth(i, config.getImportColumn().templateWidth());
-            //设置整列的单元格格式
-            writer.setColumnStyle(i, normalStyle);
-            //设置列名
-            writer.writeCellValue(i, 0, getHeaderName(config, false));
-            //设置列名的单元格格式
-            writer.setStyle(headerStyle, i, 0);
+            setHeader(writer, excelConfigList, headerStyle, normalStyle, false);
         }
 
         for (int i = 0; i < excelConfigList.size(); i++) {
