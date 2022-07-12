@@ -22,6 +22,11 @@ public @interface ImportColumn {
     String i18nKey() default "";
 
     /**
+     * 序号
+     */
+    int index() default 0;
+
+    /**
      * 是否支持为空
      */
     boolean enableEmpty() default false;

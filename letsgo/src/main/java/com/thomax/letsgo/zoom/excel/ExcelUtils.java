@@ -12,7 +12,8 @@ import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
 import com.thomax.letsgo.zoom.excel.annotation.ExportColumn;
 import com.thomax.letsgo.zoom.excel.annotation.ImportColumn;
-import com.thomax.letsgo.zoom.excel.entity.ExcelConfig;
+import com.thomax.letsgo.zoom.excel.constant.I18nConstants;
+import com.thomax.letsgo.zoom.excel.config.ExcelConfig;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -20,13 +21,17 @@ import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Hyperlink;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -49,6 +54,25 @@ import java.util.function.Function;
  * @see ImportColumn#templateWidth() 导出模板的单元格宽度
  * @see ImportColumn#templateExample() 导出模板的第一条默认数据
  *
+ * 使用此工具类的项目中依赖的Jar包最低版本：
+ *      <!-- poi -->
+ * 		<dependency>
+ * 			<groupId>org.apache.poi</groupId>
+ * 			<artifactId>poi</artifactId>
+ * 			<version>3.17</version>
+ * 		</dependency>
+ * 		<dependency>
+ * 			<groupId>org.apache.poi</groupId>
+ * 			<artifactId>poi-ooxml</artifactId>
+ * 			<version>3.17</version>
+ * 		</dependency>
+ * 	    <!-- hutool -->
+ * 		<dependency>
+ * 			<groupId>cn.hutool</groupId>
+ * 			<artifactId>hutool-all</artifactId>
+ * 			<version>5.4.5</version>
+ * 		</dependency>
+ *
  * 演示案例：单元测试目录下的com.sf.air.service.frame.ExcelTest#test()
  */
 public class ExcelUtils {
@@ -58,14 +82,24 @@ public class ExcelUtils {
      ============================================*/
 
     /**
-     * 导出Excel
+     * 导出Excel（方式1）
+     *
+     * @param response HTTP响应流
+     * @param list 数据集
+     */
+    public static void exportExcel(HttpServletResponse response, List<?> list) {
+        exportExcel(getOutputStream(response), list);
+    }
+
+    /**
+     * 导出Excel（方式1）
      *
      * @param outputStream 输出流
      * @param list 数据集
      */
     public static void exportExcel(OutputStream outputStream, List<?> list) {
         if (CollUtil.isEmpty(list)) {
-            throw new RuntimeException("无数据");
+            throw new RuntimeException(I18nConstants.getMessage(I18nConstants.EXCEL_UTIL_NOTICE1));
         }
 
         ExcelWriter writer = ExcelUtil.getWriter(true).disableDefaultStyle();
@@ -75,7 +109,18 @@ public class ExcelUtils {
     }
 
     /**
-     * 导出Excel
+     * 导出Excel（方式2）
+     *
+     * @param response HTTP响应流
+     * @param list 数据集
+     * @param path 模板相对于Resource目录的路径
+     */
+    public static void exportExcel(HttpServletResponse response, List<?> list, String path) {
+        exportExcel(getOutputStream(response), list, path, 1);
+    }
+
+    /**
+     * 导出Excel（方式2）
      *
      * @param outputStream 输出流
      * @param list 数据集
@@ -86,7 +131,19 @@ public class ExcelUtils {
     }
 
     /**
-     * 导出Excel
+     * 导出Excel（方式3）
+     *
+     * @param response HTTP响应流
+     * @param list 数据集
+     * @param path 模板相对于Resource目录的路径
+     * @param startIndex 从下标N开始写入数据（Excel内第一行的下标为0）
+     */
+    public static void exportExcel(HttpServletResponse response, List<?> list, String path, int startIndex) {
+        exportExcel(getOutputStream(response), list, path, startIndex);
+    }
+
+    /**
+     * 导出Excel（方式3）
      *
      * @param outputStream 输出流
      * @param list 数据集
@@ -95,13 +152,22 @@ public class ExcelUtils {
      */
     public static void exportExcel(OutputStream outputStream, List<?> list, String path, int startIndex) {
         if (CollUtil.isEmpty(list)) {
-            throw new RuntimeException("无数据");
+            throw new RuntimeException(I18nConstants.getMessage(I18nConstants.EXCEL_UTIL_NOTICE1));
         }
 
         ExcelWriter writer = ExcelUtil.getWriter(path).disableDefaultStyle();
         setCellStyleAndValue(writer, list, startIndex, true);
 
         flushAndClose(writer, outputStream);
+    }
+
+    //从HTTP响应流中获得输出流
+    private static OutputStream getOutputStream(HttpServletResponse response) {
+        try {
+            return response.getOutputStream();
+        } catch (IOException e) {
+            throw new RuntimeException(I18nConstants.getMessage(I18nConstants.EXCEL_UTIL_NOTICE4));
+        }
     }
 
     //设置单元格格式和数据
@@ -136,7 +202,7 @@ public class ExcelUtils {
                         String format = StrUtil.fillAfter(pre, '#', length + pre.length());
                         setCellValue(writer, mapList, config, i, startIndex, o -> NumberUtil.decimalFormat(format, o));
                     } else {
-                        setCellValue(writer, mapList, config, i, startIndex, StrUtil::toStringOrNull);
+                        setCellValue(writer, mapList, config, i, startIndex, ExcelUtils::toStringOrNull);
                     }
                     break;
                 case DATE:
@@ -147,7 +213,7 @@ public class ExcelUtils {
                     break;
                 case HYPERLINK_FILE:
                     setCellValue4Hyperlink(writer, mapList, config, i, startIndex, o -> {
-                        String value = StrUtil.toStringOrNull(o);
+                        String value = toStringOrNull(o);
                         Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.FILE);
                         hyperlink.setAddress("./" + value); //设置文件与Excel在同一文件夹下
 
@@ -156,7 +222,7 @@ public class ExcelUtils {
                     break;
                 case HYPERLINK_URL:
                     setCellValue4Hyperlink(writer, mapList, config, i, startIndex, o -> {
-                        String value = StrUtil.toStringOrNull(o);
+                        String value = toStringOrNull(o);
                         Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
                         hyperlink.setAddress(value);
 
@@ -198,7 +264,10 @@ public class ExcelUtils {
                                      int index, int startRow, Function<Object, String> function) {
         for (int i = 0; i < list.size(); i++) {
             Map<String, Object> map = list.get(i);
-            writer.writeCellValue(index, i + startRow, function.apply(map.get(config.getProp())));
+            Object value = map.get(config.getProp());
+            if (value != null) {
+                writer.writeCellValue(index, i + startRow, function.apply(value));
+            }
         }
     }
 
@@ -224,7 +293,7 @@ public class ExcelUtils {
             int width = isExport ? config.getExportColumn().width() : config.getImportColumn().templateWidth();
             writer.setColumnWidth(i, width);
             //设置整列的单元格格式
-            writer.setColumnStyle(i, normalStyle);
+            writer.getSheet().setDefaultColumnStyle(i, normalStyle);
             //设置列名
             writer.writeCellValue(i, 0, getHeaderName(config, isExport));
             //设置列名的单元格格式
@@ -244,7 +313,7 @@ public class ExcelUtils {
         }
 
         if (StrUtil.isNotBlank(i18nKey)) {
-            header = i18nKey; //I18nUtil.getMessage(i18nKey);
+            header = ""; //I18nUtil.getMessage(i18nKey); //国际化
         } else {
             if (isExport) {
                 header = config.getExportColumn().name();
@@ -254,6 +323,10 @@ public class ExcelUtils {
         }
 
         return header;
+    }
+
+    private static String toStringOrNull(Object obj) {
+        return obj == null ? null : obj.toString();
     }
 
     //刷数据、关闭writer
@@ -287,69 +360,132 @@ public class ExcelUtils {
      ============================================*/
 
     /**
-     * 导入Excel
+     * 导入Excel（方式1）
      *
-     * @param inputStream 输入流
+     * @param file 文件流
      * @param type 类型
+     * @param useIndex （true-通过注解的【index顺序】读取excel内单元格；false-通过注解的【name列名】读取excel内单元格数据）
      */
-    public static <T> List<T> importExcel(InputStream inputStream, Class<T> type) {
-        return importExcel(inputStream, type, 1);
+    public static <T> List<T> importExcel(MultipartFile file, Class<T> type, boolean useIndex) {
+        return importExcel(getInputStream(file), type, 1, useIndex);
     }
 
     /**
-     * 导入Excel
+     * 导入Excel（方式1）
+     *
+     * @param inputStream 输入流
+     * @param type 类型
+     * @param useIndex （true-通过注解的【index顺序】读取excel内单元格；false-通过注解的【name列名】读取excel内单元格数据）
+     */
+    public static <T> List<T> importExcel(InputStream inputStream, Class<T> type, boolean useIndex) {
+        return importExcel(inputStream, type, 1, useIndex);
+    }
+
+    /**
+     * 导入Excel（方式2）
+     *
+     * @param file 文件流
+     * @param type 类型
+     * @param startIndex 从下标N开始读取数据（Excel内第一行的下标为0）
+     * @param useIndex （true-通过注解的【index顺序】读取excel内单元格；false-通过注解的【name列名】读取excel内单元格数据）
+     */
+    public static <T> List<T> importExcel(MultipartFile file, Class<T> type, int startIndex, boolean useIndex) {
+        return importExcel(getInputStream(file), type, startIndex, useIndex);
+    }
+
+    /**
+     * 导入Excel（方式2）
      *
      * @param inputStream 输入流
      * @param type 类型
      * @param startIndex 从下标N开始读取数据（Excel内第一行的下标为0）
+     * @param useIndex （true-通过注解的【index顺序】读取excel内单元格；false-通过注解的【name列名】读取excel内单元格数据）
      */
-    public static <T> List<T> importExcel(InputStream inputStream, Class<T> type, int startIndex) {
+    public static <T> List<T> importExcel(InputStream inputStream, Class<T> type, int startIndex, boolean useIndex) {
         ExcelReader reader = ExcelUtil.getReader(inputStream);
         List<ExcelConfig> excelConfigList = getImportConfig(type);
-        excelConfigList.forEach((o) -> reader.addHeaderAlias(getHeaderName(o, false), o.getProp()));
-
-        //startIndex的上一行为列名所在的行
-        List<Map<String, Object>> dataList = reader.read(startIndex - 1, startIndex, 60000);
-
-        List<T> list = new ArrayList<>(dataList.size());
         CopyOptions copyOptions = CopyOptions.create();
+        List<T> list = new ArrayList<>();
+        int maxRow = 60000;  //默认最多只能读6W条数据
 
-        for (int i = 0; i < dataList.size(); i++) {
-            Map<String, Object> map = dataList.get(i);
-            for (ExcelConfig config : excelConfigList) {
-                Object obj = map.get(config.getProp());
-                String value;
-                if (obj instanceof String) {
-                    value = (String) obj;
-                } else {
-                    value = StrUtil.toStringOrNull(obj);
+        if (useIndex) {
+            for (int i = startIndex; i < maxRow; i++) {
+                List<Object> rowList = reader.readRow(i);
+                if (CollUtil.isEmpty(rowList)) {
+                    break;
                 }
-                //检查是否为空
-                if (!config.getImportColumn().enableEmpty() && StrUtil.isBlank(value)) {
-                    throw new RuntimeException(StrUtil.format("第{}行数据的列【{}】不能为空",
-                            i + startIndex + 1,
-                            getHeaderName(config, false)));
-                }
-                //检查是否匹配正则表达式
-                if (StrUtil.isNotBlank(value)) {
-                    String format = config.getImportColumn().format();
-                    if (StrUtil.isNotBlank(format)) {
-                        if (!ReUtil.isMatch(format, value)) {
-                            throw new RuntimeException(StrUtil.format("第{}行数据的列【{}】格式不正确或超出范围",
-                                    i + startIndex + 1,
-                                    getHeaderName(config, false)));
-                        }
+
+                Map<String, Object> map = new HashMap<>();
+                for (int j = 0; j < rowList.size() && j < excelConfigList.size(); j++) {
+                    int row = i + 1;
+                    Object obj = rowList.get(j);
+                    if (StrUtil.isBlankIfStr(obj)) {
+                        continue;
                     }
+                    ExcelConfig config = excelConfigList.get(j);
+                    checkImport(obj, config, row);
+                    map.put(config.getProp(), obj);
                 }
-            }
 
-            T entity = BeanUtil.mapToBean(map, type, false, copyOptions);
-            list.add(entity);
+                T entity = BeanUtil.mapToBean(map, type, false, copyOptions);
+                list.add(entity);
+            }
+        } else {
+            excelConfigList.forEach((o) -> reader.addHeaderAlias(getHeaderName(o, false), o.getProp()));
+            //startIndex的上一行为列名所在的行
+            List<Map<String, Object>> dataList = reader.read(startIndex - 1, startIndex, maxRow);
+
+            for (int i = 0; i < dataList.size(); i++) {
+                int row = i + startIndex + 1;
+                Map<String, Object> map = dataList.get(i);
+                for (ExcelConfig config : excelConfigList) {
+                    Object obj = map.get(config.getProp());
+                    checkImport(obj, config, row);
+                }
+
+                T entity = BeanUtil.mapToBean(map, type, false, copyOptions);
+                list.add(entity);
+            }
         }
 
         reader.close();
 
         return list;
+    }
+
+    private static void checkImport(Object obj, ExcelConfig config, int rowIndex) {
+        String value;
+        if (obj instanceof String) {
+            value = (String) obj;
+        } else {
+            value = toStringOrNull(obj);
+        }
+        //检查是否为空
+        if (!config.getImportColumn().enableEmpty() && StrUtil.isBlank(value)) {
+            throw new RuntimeException(I18nConstants.getMessage(I18nConstants.EXCEL_UTIL_NOTICE2)
+                    .replace("[1]", String.valueOf(rowIndex))
+                    .replace("[2]",  getHeaderName(config, false)));
+        }
+        //检查是否匹配正则表达式
+        if (StrUtil.isNotBlank(value)) {
+            String format = config.getImportColumn().format();
+            if (StrUtil.isNotBlank(format)) {
+                if (!ReUtil.isMatch(format, value)) {
+                    throw new RuntimeException(I18nConstants.getMessage(I18nConstants.EXCEL_UTIL_NOTICE3)
+                            .replace("[1]", String.valueOf(rowIndex))
+                            .replace("[2]",  getHeaderName(config, false)));
+                }
+            }
+        }
+    }
+
+    //从文件流中获得输入流
+    private static InputStream getInputStream(MultipartFile file) {
+        try {
+            return file.getInputStream();
+        } catch (IOException e) {
+            throw new RuntimeException(I18nConstants.getMessage(I18nConstants.EXCEL_UTIL_NOTICE4));
+        }
     }
 
     //从实体类的注解中读取导入配置
@@ -368,7 +504,7 @@ public class ExcelUtils {
             list.add(excelConfig);
         }
 
-        return list;
+        return CollUtil.sort(list, Comparator.comparingInt(o -> o.getImportColumn().index()));
     }
 
     /*--------------------------------------------
@@ -376,7 +512,17 @@ public class ExcelUtils {
      ============================================*/
 
     /**
-     * 下载导入模板
+     * 下载导入模板（方式1）
+     *
+     * @param response HTTP响应流
+     * @param type 类型
+     */
+    public static <T> void downloadTemplate(HttpServletResponse response, Class<T> type) {
+        downloadTemplate(getOutputStream(response), type);
+    }
+
+    /**
+     * 下载导入模板（方式1）
      *
      * @param outputStream 输出流
      * @param type 类型
@@ -405,7 +551,17 @@ public class ExcelUtils {
     }
 
     /**
-     * 下载导入模板
+     * 下载导入模板（方式2）
+     *
+     * @param response HTTP响应流
+     * @param path 模板相对于Resource目录的路径
+     */
+    public static void downloadTemplate(HttpServletResponse response, String path) {
+        downloadTemplate(getOutputStream(response), path);
+    }
+
+    /**
+     * 下载导入模板（方式2）
      *
      * @param outputStream 输出流
      * @param path 模板相对于Resource目录的路径

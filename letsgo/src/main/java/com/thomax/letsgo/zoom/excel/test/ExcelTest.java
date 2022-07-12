@@ -1,4 +1,4 @@
-package com.thomax.letsgo.zoom.excel.entity;
+package com.thomax.letsgo.zoom.excel.test;
 
 import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-public class ExcelExample {
+public class ExcelTest {
 
     @ExportColumn(name = "数值(byte)", index = 1)
     @ImportColumn(name = "数值(byte)", templateIndex = 1, templateExample = "123")
@@ -62,34 +62,37 @@ public class ExcelExample {
         ExcelUtils.exportExcel(fos, createData());
 
         /*FileOutputStream fos2 = new FileOutputStream(FILE);
-        ExcelUtils.exportExcel(fos2, createData(), "template.xlsx", 1);*/
+        ExcelUtils.exportExcel(fos2, Arrays.asList(excelExample, excelExample), "template.xlsx", 1);*/
 
         FileInputStream fis = new FileInputStream(FILE);
-        List<ExcelExample> list = ExcelUtils.importExcel(fis, ExcelExample.class);
-        System.out.println(JSON.toJSONString(list));
+        List<ExcelTest> list = ExcelUtils.importExcel(fis, ExcelTest.class, true);
+        System.out.println("读取到的Excel数据1:" + JSON.toJSONString(list));
+        FileInputStream fis2 = new FileInputStream(FILE);
+        List<ExcelTest> list2 = ExcelUtils.importExcel(fis2, ExcelTest.class, false);
+        System.out.println("读取到的Excel数据2:" + JSON.toJSONString(list2));
 
-        /*FileOutputStream fos3 = new FileOutputStream(TEMPLATE);
-        ExcelUtils.downloadTemplate(fos3, ExcelExample.class);*/
+        FileOutputStream fos3 = new FileOutputStream(TEMPLATE);
+        ExcelUtils.downloadTemplate(fos3, ExcelTest.class);
 
-       /* FileOutputStream fos4 = new FileOutputStream(TEMPLATE);
+        /*FileOutputStream fos4 = new FileOutputStream(TEMPLATE);
         ExcelUtils.downloadTemplate(fos4, "template.xlsx");*/
 
-        System.out.println("操作结束");
+        System.out.println("============Excel测试结束============");
     }
 
-    private static List<ExcelExample> createData() {
-        ExcelExample excelExample = new ExcelExample();
-        excelExample.setByteCell(Byte.MAX_VALUE);
-        excelExample.setIntCell(Integer.MAX_VALUE);
-        excelExample.setLongCell(Long.MAX_VALUE);
-        excelExample.setDoubleCell(12345678901234.1234567d);
-        excelExample.setBigDecimalCell(new BigDecimal("1234567890987654321.1234567890987654321"));
-        excelExample.setDateCell(DateUtil.parseDate("2022-11-11"));
-        excelExample.setDatetimeCell(DateUtil.parseDateTime("2022-11-11 13:13:13"));
-        excelExample.setStringCell("群贤毕至，少长咸集。此地有崇山峻岭，茂林修竹，又有清流激湍，映带左右。");
-        excelExample.setFileCell("1122.png");
+    private static List<ExcelTest> createData() {
+        ExcelTest excelTest = new ExcelTest();
+        excelTest.setByteCell(Byte.MAX_VALUE);
+        excelTest.setIntCell(Integer.MAX_VALUE);
+        excelTest.setLongCell(Long.MAX_VALUE);
+        excelTest.setDoubleCell(12345678901234.1234567d);
+        excelTest.setBigDecimalCell(new BigDecimal("1234567890987654321.1234567890987654321"));
+        excelTest.setDateCell(DateUtil.parseDate("2022-11-11"));
+        excelTest.setDatetimeCell(DateUtil.parseDateTime("2022-11-11 13:13:13"));
+        excelTest.setStringCell("群贤毕至，少长咸集。此地有崇山峻岭，茂林修竹，又有清流激湍，映带左右。");
+        excelTest.setFileCell("1122.png");
 
-        return Arrays.asList(excelExample, excelExample);
+        return Arrays.asList(excelTest, excelTest);
     }
 
 }
