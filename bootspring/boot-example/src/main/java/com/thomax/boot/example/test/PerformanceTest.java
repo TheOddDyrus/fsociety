@@ -1,7 +1,6 @@
 package com.thomax.boot.example.test;
 
 import com.alibaba.fastjson.JSON;
-import com.google.common.base.Throwables;
 import com.thomax.boot.example.model.MsgContent;
 import com.thomax.boot.example.model.Result;
 import org.apache.http.client.HttpClient;
@@ -91,7 +90,7 @@ public class PerformanceTest {
                         result.setResultCode(responseEntity.getStatusCodeValue());
                         result.setResultMsg(responseEntity.getBody());
                     } catch (Exception e) {
-                        result.setResultMsg(Throwables.getStackTraceAsString(e));
+                        result.setResultMsg(e.getMessage());
                         result.setResultCode(-1);
                     } finally {
                         endGate.countDown(); //闭锁2计数减1

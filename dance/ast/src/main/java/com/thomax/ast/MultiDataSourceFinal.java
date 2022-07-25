@@ -18,14 +18,12 @@ import com.alibaba.druid.sql.ast.statement.SQLTableSource;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlSelectQueryBlock;
 import com.alibaba.druid.util.JdbcConstants;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.thomax.ast.exception.NoDataException;
 import com.thomax.ast.model.Column;
 import com.thomax.ast.model2.DeviceDetailInfoTransfer;
 import com.thomax.ast.model2.ResultSetImpl;
 import com.thomax.ast.model2.TransferTableInfo;
 import com.thomax.ast.type.ConditionType;
-import com.thomax.ast.type.DbType;
 import com.thomax.ast.type.OperatorType;
 import com.thomax.ast.type.RelaType;
 import com.thomax.ast.model.Result;
@@ -34,12 +32,9 @@ import com.thomax.ast.model.TableCondition;
 import com.thomax.ast.model.TableRela;
 import com.thomax.ast.util.CacheUtil;
 import com.thomax.ast.util.MySQLUtil;
-import org.apache.commons.collections.CollectionUtils;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,7 +45,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1022,7 +1016,8 @@ public class MultiDataSourceFinal {
                 */
                 Set<Long> deviceIdNotExistsCollection = new HashSet<>();
                 Set<String> groupNameNotExistsCollection = new HashSet<>();
-                if (CollectionUtils.isNotEmpty(data) && CollectionUtils.isNotEmpty(anotherCondition)) {
+                if ((data != null && data.size() > 0)
+                        && (anotherCondition != null && anotherCondition.size() > 0)) {
                     List<TableCondition> andList = new ArrayList<>();
                     List<TableCondition> orList = new ArrayList<>();
                     for (TableCondition tableCondition : anotherCondition) {
@@ -1171,7 +1166,7 @@ public class MultiDataSourceFinal {
      */
     private void mergeResultByResultSet(List<Column> rightColumnList, RelaType rela, List<TableCondition> twoTableCondition,
                                         Result result, ResultSet resultSet) throws SQLException {
-        if (!CollectionUtils.isNotEmpty(rightColumnList)) {
+        if (rightColumnList == null || rightColumnList.size() == 0) {
             return;
         }
 
