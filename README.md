@@ -10,7 +10,6 @@ The name `fsociety` refers to **'free society'**
             └─ flink
             └─ spark
         ├─bootspring SpringBoot案例
-            ├─ boot-example
             ├─ boot-starter
             └─ boot-test
         ├─cloudspring SpringCloud案例

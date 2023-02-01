@@ -14,7 +14,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>boot-example</module>
         <module>boot-test</module>
         <module>boot-starter</module>
     </modules>
